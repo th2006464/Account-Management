@@ -1,0 +1,273 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "GARCHINA域密码管理";
+}
+
+<div class="alert alert-success" style="text-align: center; margin-top: 20px;">
+    <h2 style="margin-top: 0; margin-bottom: 8px;">GARCHINA域账号管理</h2>
+    如有任何问题，请发邮件到中国区IT团队<br />
+    CN IT Support &lt;<a href="mailto:CN_IT_Support@sinarmas-agri.com">CN_IT_Support@sinarmas-agri.com</a>&gt;
+</div>
+
+<div class="panel panel-warning">
+    <div class="panel-heading"><strong>注意事项：务必仔细阅读</strong></div>
+    <div class="panel-body" style="line-height: 1.8;">
+        <p>&#128226; 此页面用于GARCHINA账号密码更新，密码有效期为：<strong>90天</strong></p>
+        <p>&#128161; 账号密码适用于公司电脑系统登录、OA 系统登录、VPN、Workday 请休假系统。</p>
+        <p>&#9888;&#65039; 密码要求使用<strong>9位安全密码</strong>，必须同时包含：大写字母 / 小写字母 / 数字 / 符号</p>
+        <p>&#9989; 安全密码举例：拼音+符号+数字。如 <strong>Pinyin@20250101</strong>，<strong>Fuhao#19601001</strong>。</p>
+        <p>&#10060; 密码不得包含历史密码；连续字母；连续数字；自己姓、名拼音；英文姓、名以及公司中英文名称。</p>
+        <p>&#128679; 重要提示：请务必手动输入当前密码，自动填充密码可能不准确！</p>
+    </div>
+</div>
+
+<form method="post" id="mainForm" autocomplete="off">
+    <div class="panel panel-default">
+        <div class="panel-heading">账号操作</div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="Username">GARCHINA员工号(8位数字)</label>
+                <input class="form-control" id="Username" name="Username" value="@Model.Username" maxlength="8" placeholder="请输入8位员工号" autocomplete="off" />
+            </div>
+            <div class="form-group">
+                <label for="CurrentPassword">当前密码</label>
+                <input type="password" class="form-control" id="CurrentPassword" name="CurrentPassword" autocomplete="new-password" />
+            </div>
+            <div class="form-group">
+                <label for="NewPassword">新密码</label>
+                <input type="password" class="form-control" id="NewPassword" name="NewPassword" autocomplete="new-password" />
+                <div id="pwdChecks" class="pwd-checks" style="display:none; margin-top: 8px;">
+                    <span id="checkLen">&#9679; 至少9个字符</span><br />
+                    <span id="checkUpper">&#9679; 包含大写字母</span><br />
+                    <span id="checkLower">&#9679; 包含小写字母</span><br />
+                    <span id="checkDigit">&#9679; 包含数字</span><br />
+                    <span id="checkSymbol">&#9679; 包含符号</span><br />
+                    <span id="checkSeq">&#9679; 无连续字符(如abcd、1234)</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="ConfirmPassword">确认密码</label>
+                <input type="password" class="form-control" id="ConfirmPassword" name="ConfirmPassword" autocomplete="new-password" />
+                <span id="confirmMatch" style="display:none; margin-top: 10px;"></span>
+            </div>
+
+            <div class="action-buttons" style="display: flex; gap: 20px;">
+                <button type="button" id="btnShowPwd" class="btn btn-default">显示密码</button>
+                <button type="button" id="btnUpdate" class="btn btn-success">更新密码</button>
+                <button type="button" id="btnReset" class="btn btn-default">重新输入</button>
+                <button type="submit" name="action" value="status" class="btn btn-primary" style="margin-left: auto;">查询账号状态</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="result-area" style="margin-top: 10px;">
+    @if (!string.IsNullOrEmpty(Model.AccountStatus))
+    {
+        <div class="panel panel-success">
+            <div class="panel-heading">@(Model.ResultMessage ?? "账号信息")</div>
+            <div class="panel-body">
+                <pre>@Model.AccountStatus</pre>
+            </div>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Model.ResultMessage))
+    {
+        <div class="alert alert-success" style="white-space: pre-line;">@Model.ResultMessage</div>
+    }
+    else if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">@Model.ErrorMessage</div>
+    }
+</div>
+
+<!-- 确认弹窗 -->
+<div class="modal fade" id="confirmModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">确认更新密码</h4>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <img src="https://www.garchina.com/img/password.png" alt="密码规则" style="max-width: 100%; margin-bottom: 15px;" onerror="this.style.display='none'" />
+            </div>
+            <div class="modal-footer" style="text-align: center;">
+                <button type="button" id="btnConfirmUpdate" class="btn btn-success btn-lg" style="white-space: normal;">我已阅读并理解密码规则要求。<br />确认密码更新。</button>
+                <button type="button" class="btn btn-danger btn-lg" data-dismiss="modal" style="white-space: normal;">我还不清楚如何操作。<br />需要再看一下操作步骤。</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var form = document.getElementById('mainForm');
+    var btnUpdate = document.getElementById('btnUpdate');
+    var btnConfirmUpdate = document.getElementById('btnConfirmUpdate');
+    var allButtons = form.querySelectorAll('button[type="submit"], #btnUpdate');
+
+    var submitting = false;
+
+    // 页面加载时清空浏览器可能自动填充的内容
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            document.getElementById('CurrentPassword').value = '';
+            document.getElementById('NewPassword').value = '';
+            document.getElementById('ConfirmPassword').value = '';
+            // 仅在首次访问(GET)时清空员工号，用户自己查询后(POST)保留
+            var usernameInput = document.getElementById('Username');
+            if (!usernameInput.getAttribute('value')) {
+                usernameInput.value = '';
+            }
+        }, 100);
+    });
+
+    function lockButtons() {
+        submitting = true;
+        allButtons.forEach(function(btn) { btn.disabled = true; });
+    }
+
+    function unlockButtons() {
+        submitting = false;
+        allButtons.forEach(function(btn) { btn.disabled = false; });
+    }
+
+    // 更新密码按钮 -> 弹出确认弹窗
+    btnUpdate.addEventListener('click', function() {
+        if (submitting) return;
+        $('#confirmModal').modal('show');
+    });
+
+    // 确认弹窗绿色按钮 -> 提交更新
+    btnConfirmUpdate.addEventListener('click', function() {
+        $('#confirmModal').modal('hide');
+        lockButtons();
+        // 创建隐藏的action字段并提交
+        var existingAction = form.querySelector('input[name="action"]');
+        if (existingAction) existingAction.remove();
+        var actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'update';
+        form.appendChild(actionInput);
+        form.submit();
+    });
+
+    // 表单提交时锁定按钮（延迟禁用，确保浏览器先捕获 submit 按钮的值）
+    form.addEventListener('submit', function(e) {
+        if (submitting) {
+            e.preventDefault();
+            return false;
+        }
+        submitting = true;
+        setTimeout(function() {
+            allButtons.forEach(function(btn) { btn.disabled = true; });
+        }, 0);
+        setTimeout(unlockButtons, 5000);
+    });
+
+    form.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') {
+            e.preventDefault();
+            var statusBtn = form.querySelector('button[value="status"]');
+            statusBtn.click();
+        }
+    });
+
+    // 显示/隐藏所有密码
+    var btnShowPwd = document.getElementById('btnShowPwd');
+    var pwdFields = ['CurrentPassword', 'NewPassword', 'ConfirmPassword'];
+    var showingPwd = false;
+    btnShowPwd.addEventListener('click', function() {
+        showingPwd = !showingPwd;
+        var type = showingPwd ? 'text' : 'password';
+        pwdFields.forEach(function(id) {
+            document.getElementById(id).type = type;
+        });
+        btnShowPwd.textContent = showingPwd ? '隐藏密码' : '显示密码';
+    });
+
+    // 重新输入按钮 - 清空所有字段
+    var btnReset = document.getElementById('btnReset');
+    btnReset.addEventListener('click', function() {
+        document.getElementById('Username').value = '';
+        document.getElementById('CurrentPassword').value = '';
+        document.getElementById('NewPassword').value = '';
+        document.getElementById('ConfirmPassword').value = '';
+        pwdChecks.style.display = 'none';
+        confirmMatch.style.display = 'none';
+        // 如果密码正在显示，切换回隐藏
+        if (showingPwd) {
+            btnShowPwd.click();
+        }
+    });
+
+    // 密码强度实时检测
+    var newPwd = document.getElementById('NewPassword');
+    var confirmPwd = document.getElementById('ConfirmPassword');
+    var pwdChecks = document.getElementById('pwdChecks');
+    var checkLen = document.getElementById('checkLen');
+    var checkUpper = document.getElementById('checkUpper');
+    var checkLower = document.getElementById('checkLower');
+    var checkDigit = document.getElementById('checkDigit');
+    var checkSymbol = document.getElementById('checkSymbol');
+    var checkSeq = document.getElementById('checkSeq');
+    var confirmMatch = document.getElementById('confirmMatch');
+
+    function hasSequential(s) {
+        s = s.toLowerCase();
+        for (var i = 0; i < s.length - 3; i++) {
+            var c1 = s.charCodeAt(i);
+            var c2 = s.charCodeAt(i + 1);
+            var c3 = s.charCodeAt(i + 2);
+            var c4 = s.charCodeAt(i + 3);
+            if (c2 === c1 + 1 && c3 === c2 + 1 && c4 === c3 + 1) return true;
+            if (c2 === c1 - 1 && c3 === c2 - 1 && c4 === c3 - 1) return true;
+        }
+        var kbPatterns = ['qwer','wert','erty','rtyu','tyui','yuio','uiop',
+                          'asdf','sdfg','dfgh','fghj','ghjk','hjkl',
+                          'zxcv','xcvb','cvbn','vbnm'];
+        for (var j = 0; j < kbPatterns.length; j++) {
+            if (s.indexOf(kbPatterns[j]) !== -1) return true;
+            if (s.indexOf(kbPatterns[j].split('').reverse().join('')) !== -1) return true;
+        }
+        return false;
+    }
+
+    function pass(v) { return '<span style="color:green;">&#10004; ' + v + '</span>'; }
+    function fail(v) { return '<span style="color:#999;">&#9679; ' + v + '</span>'; }
+
+    newPwd.addEventListener('input', function() {
+        var v = this.value;
+        if (v.length === 0) {
+            pwdChecks.style.display = 'none';
+            return;
+        }
+        pwdChecks.style.display = 'block';
+        checkLen.innerHTML = v.length >= 9 ? pass('至少9个字符') : fail('至少9个字符');
+        checkUpper.innerHTML = /[A-Z]/.test(v) ? pass('包含大写字母') : fail('包含大写字母');
+        checkLower.innerHTML = /[a-z]/.test(v) ? pass('包含小写字母') : fail('包含小写字母');
+        checkDigit.innerHTML = /[0-9]/.test(v) ? pass('包含数字') : fail('包含数字');
+        checkSymbol.innerHTML = /[^a-zA-Z0-9]/.test(v) ? pass('包含符号') : fail('包含符号');
+        checkSeq.innerHTML = !hasSequential(v) ? pass('无连续字符(如abcd、1234)') : fail('无连续字符(如abcd、1234)');
+        checkConfirmMatch();
+    });
+
+    confirmPwd.addEventListener('input', checkConfirmMatch);
+
+    function checkConfirmMatch() {
+        if (confirmPwd.value.length === 0) {
+            confirmMatch.style.display = 'none';
+            return;
+        }
+        confirmMatch.style.display = 'inline';
+        if (confirmPwd.value === newPwd.value) {
+            confirmMatch.innerHTML = '<span style="color:green;">&#10004; 密码匹配</span>';
+        } else {
+            confirmMatch.innerHTML = '<span style="color:red;">&#10008; 密码不匹配</span>';
+        }
+    }
+})();
+</script>

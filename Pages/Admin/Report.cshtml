@@ -1,0 +1,70 @@
+@page "/Admin/Report"
+@model AccountManagement.Pages.Admin.ReportModel
+@{
+    ViewData["Title"] = "用户报表";
+}
+
+@if (!Model.IsAuthenticated)
+{
+    <div class="alert alert-danger" style="margin-top: 20px;">请先<a asp-page="/Admin/Login">登录</a>。</div>
+    return;
+}
+
+<div class="alert alert-info" style="margin-top: 20px;">
+    <strong>用户报表</strong> — 当前登录：<strong>@Model.CurrentEmployeeId</strong>
+    <span style="float: right;">
+        <a asp-page="/Admin/UserAdmin">返回管理主页</a> |
+        <a asp-page="/Admin/Login" asp-page-handler="Logout">退出登录</a>
+    </span>
+    <div style="clear: both;"></div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ResultMessage))
+{
+    <div class="alert alert-success">@Model.ResultMessage</div>
+}
+
+<div class="panel panel-default" style="margin-top: 20px;">
+    <div class="panel-heading"><strong>功能面板</strong></div>
+    <div class="panel-body">
+        <form method="post" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+            <button type="submit" name="action" value="queryAll" class="btn btn-info">查询所有用户</button>
+            <button type="submit" name="action" value="queryHcm" class="btn btn-primary">查询 HCM 用户</button>
+            <button type="submit" name="action" value="queryFood" class="btn btn-success">查询食品用户</button>
+            <button type="submit" name="action" value="queryGar" class="btn btn-warning">查询粮油用户</button>
+            <button type="submit" name="action" value="queryPwd7" class="btn btn-danger">密码7天内到期</button>
+            <button type="submit" name="action" value="queryPwd30" class="btn btn-warning">密码30天内到期</button>
+            <button type="submit" name="action" value="queryPwd60" class="btn btn-default">密码60天内到期</button>
+        </form>
+    </div>
+</div>
+
+@if (Model.ChartData != null && Model.ChartData.Count > 0)
+{
+    <div class="panel panel-info" style="margin-top: 10px;">
+        <div class="panel-heading"><strong>统计图表</strong></div>
+        <div class="panel-body">
+            <pre style="font-size: 14px; line-height: 1.6;">@string.Join(Environment.NewLine, Model.ChartData)</pre>
+        </div>
+    </div>
+}
+
+@if (Model.ReportResults != null && Model.ReportResults.Count > 0)
+{
+    <div class="panel panel-success" style="margin-top: 10px;">
+        <div class="panel-heading">
+            详细结果
+            <form method="post" style="display: inline; float: right;">
+                <button type="submit" name="action" value="download" class="btn btn-default btn-sm">&#9195; 下载 CSV</button>
+            </form>
+            <div style="clear: both;"></div>
+        </div>
+        <div class="panel-body">
+            <pre style="max-height: 600px; overflow-y: auto; font-size: 12px;">@string.Join(Environment.NewLine, Model.ReportResults)</pre>
+        </div>
+    </div>
+}

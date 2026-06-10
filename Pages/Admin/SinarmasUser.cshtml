@@ -1,0 +1,83 @@
+@page "/Admin/SinarmasUser"
+@model AccountManagement.Pages.Admin.SinarmasUserModel
+@{
+    ViewData["Title"] = "Sinarmas 用户查询";
+}
+
+@if (!Model.IsAuthenticated)
+{
+    <div class="alert alert-danger" style="margin-top: 20px;">请先<a asp-page="/Admin/Login">登录</a>。</div>
+    return;
+}
+
+<div class="alert alert-info" style="margin-top: 20px;">
+    <strong>Sinarmas 用户查询</strong> — 当前登录：<strong>@Model.CurrentEmployeeId</strong>
+    <span style="float: right;">
+        <a asp-page="/Admin/UserAdmin">返回管理主页</a> |
+        <a asp-page="/Admin/Login" asp-page-handler="Logout">退出登录</a>
+    </span>
+    <div style="clear: both;"></div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ResultMessage))
+{
+    <div class="alert alert-success">@Model.ResultMessage</div>
+}
+
+<form method="post" id="mainForm">
+    <div class="panel panel-default">
+        <div class="panel-heading"><strong>搜索用户</strong></div>
+        <div class="panel-body">
+            <div style="display: flex; gap: 10px;">
+                <input class="form-control" id="SearchEmployeeId" name="SearchEmployeeId" value="@Model.SearchEmployeeId" style="flex: 1;" placeholder="输入员工号" autocomplete="off" />
+                <button type="submit" name="action" value="search" class="btn btn-primary">搜索</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-warning" style="margin-top: 20px;">
+        <div class="panel-heading"><strong>控制面板</strong></div>
+        <div class="panel-body">
+            <button type="submit" name="action" value="unlock" class="btn btn-warning">解锁用户</button>
+        </div>
+    </div>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.UserDetail))
+{
+    <div class="panel panel-success" style="margin-top: 10px;">
+        <div class="panel-heading">用户详细信息</div>
+        <div class="panel-body">
+            <pre>@Model.UserDetail</pre>
+        </div>
+    </div>
+}
+
+<script>
+(function() {
+    var form = document.getElementById('mainForm');
+    var submitting = false;
+
+    form.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') {
+            e.preventDefault();
+            form.querySelector('button[value="search"]').click();
+        }
+    });
+
+    form.addEventListener('submit', function(e) {
+        if (submitting) {
+            e.preventDefault();
+            return false;
+        }
+        submitting = true;
+        var btns = form.querySelectorAll('button[type="submit"]');
+        setTimeout(function() { btns.forEach(function(b) { b.disabled = true; }); }, 0);
+        setTimeout(function() { submitting = false; btns.forEach(function(b) { b.disabled = false; }); }, 10000);
+    });
+})();
+</script>

@@ -1,0 +1,86 @@
+@page "/Admin/AdminLog"
+@model AccountManagement.Pages.Admin.AdminLogModel
+@{
+    ViewData["Title"] = "高级日志查询";
+}
+
+@if (!Model.IsAuthenticated)
+{
+    <div class="alert alert-danger" style="margin-top: 20px;">无权访问此页面。</div>
+    return;
+}
+
+<div class="alert alert-info" style="margin-top: 20px;">
+    <strong>高级操作日志</strong> — 当前登录：<strong>@Model.CurrentEmployeeId</strong>
+    <span style="float: right;">
+        <a asp-page="/Admin/UserAdmin">返回管理主页</a> |
+        <a asp-page="/Admin/Login" asp-page-handler="Logout">退出登录</a>
+    </span>
+    <div style="clear: both;"></div>
+</div>
+
+<div class="panel panel-default" style="margin-top: 20px;">
+    <div class="panel-heading">
+        <strong>全部操作记录</strong>
+        <span class="badge">共 @Model.TotalCount 条</span>
+        <span style="margin-left: 15px;">第 @Model.CurrentPage / @Model.TotalPages 页</span>
+    </div>
+    <div class="panel-body">
+        @if (Model.TotalPages > 1)
+        {
+            <div style="margin-bottom: 10px;">
+                <div class="btn-group btn-group-sm">
+                    @if (Model.CurrentPage > 1)
+                    {
+                        <a asp-page="/Admin/AdminLog" asp-route-page="1" class="btn btn-default">首页</a>
+                        <a asp-page="/Admin/AdminLog" asp-route-page="@(Model.CurrentPage - 1)" class="btn btn-default">上一页</a>
+                    }
+                    @for (int i = Math.Max(1, Model.CurrentPage - 5); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 5); i++)
+                    {
+                        <a asp-page="/Admin/AdminLog" asp-route-page="@i" class="btn btn-default @(i == Model.CurrentPage ? "active" : "")">@i</a>
+                    }
+                    @if (Model.CurrentPage < Model.TotalPages)
+                    {
+                        <a asp-page="/Admin/AdminLog" asp-route-page="@(Model.CurrentPage + 1)" class="btn btn-default">下一页</a>
+                        <a asp-page="/Admin/AdminLog" asp-route-page="@Model.TotalPages" class="btn btn-default">末页</a>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (Model.PageLogs.Count > 0)
+        {
+            <pre style="max-height: 500px; overflow-y: auto;">@string.Join(Environment.NewLine, Model.PageLogs)</pre>
+        }
+        else
+        {
+            <p style="color: #999;">暂无记录。</p>
+        }
+
+        @if (Model.TotalPages > 1)
+        {
+            <div style="margin-top: 10px;">
+                <div class="btn-group btn-group-sm">
+                    @if (Model.CurrentPage > 1)
+                    {
+                        <a asp-page="/Admin/AdminLog" asp-route-page="1" class="btn btn-default">首页</a>
+                        <a asp-page="/Admin/AdminLog" asp-route-page="@(Model.CurrentPage - 1)" class="btn btn-default">上一页</a>
+                    }
+                    @for (int i = Math.Max(1, Model.CurrentPage - 5); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 5); i++)
+                    {
+                        <a asp-page="/Admin/AdminLog" asp-route-page="@i" class="btn btn-default @(i == Model.CurrentPage ? "active" : "")">@i</a>
+                    }
+                    @if (Model.CurrentPage < Model.TotalPages)
+                    {
+                        <a asp-page="/Admin/AdminLog" asp-route-page="@(Model.CurrentPage + 1)" class="btn btn-default">下一页</a>
+                        <a asp-page="/Admin/AdminLog" asp-route-page="@Model.TotalPages" class="btn btn-default">末页</a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="alert alert-info" style="margin-top: 20px;">
+    <strong>日志文件位置：</strong><code>@Model.AuditLogPath</code>
+</div>

@@ -1,0 +1,30 @@
+@page "/Admin/Login"
+@model AccountManagement.Pages.Admin.LoginModel
+@{
+    ViewData["Title"] = "管理员登录";
+}
+
+<div class="row" style="margin-top: 20px;">
+    <div class="col-md-4 col-md-offset-4">
+        <div class="panel panel-default" style="margin-top: 20px;">
+            <div class="panel-heading"><strong>管理员登录</strong></div>
+            <div class="panel-body">
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="alert alert-danger">@Model.ErrorMessage</div>
+                }
+                <form method="post">
+                    <div class="form-group">
+                        <label for="EmployeeId">员工号</label>
+                        <input class="form-control" id="EmployeeId" name="EmployeeId" autocomplete="off" />
+                    </div>
+                    <div class="form-group">
+                        <label for="Password">密码</label>
+                        <input type="password" class="form-control" id="Password" name="Password" autocomplete="new-password" />
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">登录</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

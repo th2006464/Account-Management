@@ -1,0 +1,240 @@
+@page "/Admin/UserAdmin"
+@model AccountManagement.Pages.Admin.UserAdminModel
+@{
+    ViewData["Title"] = "管理员查询";
+}
+
+@if (!Model.IsAuthenticated)
+{
+    <div class="alert alert-danger">请先<a asp-page="/Admin/Login">登录</a>。</div>
+    return;
+}
+
+<div class="alert alert-info" style="margin-top: 20px;">
+    <strong>管理员查询</strong> — 当前登录：<strong>@Model.CurrentEmployeeId</strong>
+    <a asp-page="/Admin/AdminLog" style="margin-right: 15px;">操作日志</a>
+    <a asp-page="/Admin/Login" asp-page-handler="Logout" style="float: right;">退出登录</a>
+    <div style="clear: both;"></div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ResultMessage))
+{
+    <div class="alert alert-success" style="white-space: pre-line;">@Model.ResultMessage</div>
+}
+
+<form method="post" id="mainForm">
+    <div class="panel panel-default">
+        <div class="panel-heading"><strong>搜索用户</strong></div>
+        <div class="panel-body">
+            <div style="display: flex; gap: 10px;">
+                <input class="form-control" id="SearchEmployeeId" name="SearchEmployeeId" value="@Model.SearchEmployeeId" maxlength="8" style="flex: 1;" placeholder="输入8位员工号" autocomplete="off" />
+                <button type="submit" name="action" value="search" class="btn btn-primary">搜索</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-warning" style="margin-top: 20px;">
+        <div class="panel-heading"><strong>控制面板</strong></div>
+        <div class="panel-body">
+            <div style="display: flex; gap: 20px;">
+                <button type="submit" name="action" value="reset" class="btn btn-success">重置密码</button>
+                <a asp-page="/Admin/NewUser" class="btn btn-info">创建用户</a>
+                <button type="submit" name="action" value="offboard" class="btn btn-danger">一键离职</button>
+                <button type="submit" name="action" value="unlock" class="btn btn-warning" style="margin-left: auto;">解锁所有账号</button>
+            </div>
+            <div style="display: flex; gap: 20px; margin-top: 10px;">
+                <button type="submit" name="action" value="clearHistory" class="btn btn-default" onclick="return confirm('此操作会清空所有操作记录，确认清空吗？');">清空记录</button>
+                <a asp-page="/Admin/Report" class="btn btn-default">用户报表</a>
+                <button type="button" id="btnAddGroup" class="btn btn-default">加用户组</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" name="GroupName" id="GroupName" value="" />
+</form>
+
+<!-- 加用户组弹窗 -->
+<div class="modal fade" id="addGroupModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">添加到用户组</h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>输入用户组名称</label>
+                    <input class="form-control" id="modalGroupName" placeholder="如 GARCHINA_OA_Users" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" id="btnConfirmAddGroup" class="btn btn-primary">确认添加</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.UserDetail))
+{
+    <div class="panel panel-success">
+        <div class="panel-heading">用户详细信息</div>
+        <div class="panel-body">
+            <pre>@Model.UserDetail</pre>
+        </div>
+    </div>
+}
+
+@if (Model.ResetResults != null && Model.ResetResults.Count > 0)
+{
+    <div class="panel panel-success" style="margin-top: 10px;">
+        <div class="panel-heading">密码重置结果</div>
+        <div class="panel-body">
+            <pre>@string.Join(Environment.NewLine, Model.ResetResults)</pre>
+        </div>
+    </div>
+}
+
+@if (Model.OffboardResults != null && Model.OffboardResults.Count > 0)
+{
+    <div class="panel panel-danger" style="margin-top: 10px;">
+        <div class="panel-heading">离职处理结果</div>
+        <div class="panel-body">
+            <pre>@string.Join(Environment.NewLine, Model.OffboardResults)</pre>
+        </div>
+    </div>
+}
+
+@if (Model.UnlockResults != null && Model.UnlockResults.Count > 0)
+{
+    <div class="panel panel-success" style="margin-top: 10px;">
+        <div class="panel-heading">解锁结果</div>
+        <div class="panel-body">
+            <pre>@string.Join(Environment.NewLine, Model.UnlockResults)</pre>
+        </div>
+    </div>
+}
+
+<div class="panel panel-info" style="margin-top: 20px;">
+    <div class="panel-heading"><strong>操作记录</strong></div>
+    <div class="panel-body">
+        @if (Model.OperationHistory != null && Model.OperationHistory.Count > 0)
+        {
+            <pre>@string.Join(Environment.NewLine, Model.OperationHistory)</pre>
+        }
+        else
+        {
+            <p style="color: #999;">暂无操作记录。</p>
+        }
+    </div>
+</div>
+
+<div class="panel panel-default" style="margin-top: 10px;">
+    <div class="panel-heading"><strong>邮件发送记录</strong></div>
+    <div class="panel-body">
+        @if (Model.EmailHistory != null && Model.EmailHistory.Count > 0)
+        {
+            <pre>@string.Join(Environment.NewLine, Model.EmailHistory)</pre>
+        }
+        else
+        {
+            <p style="color: #999;">暂无邮件记录。</p>
+        }
+    </div>
+</div>
+
+@if (Model.CurrentEmployeeId == "15005035")
+{
+<div class="panel panel-default" style="margin-top: 20px;">
+    <div class="panel-heading"><strong>管理员授权</strong></div>
+    <div class="panel-body">
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <input class="form-control" name="AddAdminEmployeeId" maxlength="8" placeholder="输入8位员工号" style="flex: 1;" autocomplete="off" />
+            <button type="submit" name="action" value="addAdmin" class="btn btn-success">添加管理员</button>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <span style="line-height: 2; margin-right: 8px;">当前管理员：</span>
+            @if (Model.AdminList != null)
+            {
+                foreach (var admin in Model.AdminList)
+                {
+                    if (admin == "15005035")
+                    {
+                        <span class="btn btn-default btn-sm" style="pointer-events: none; opacity: 0.7;">@admin</span>
+                    }
+                    else
+                    {
+                        <button type="submit" name="action" value="removeAdmin" class="btn btn-default btn-sm" onclick="document.getElementsByName('RemoveAdminEmployeeId')[0].value='@admin';" title="点击移除">@admin ✕</button>
+                    }
+                }
+            }
+        </div>
+        <input type="hidden" name="RemoveAdminEmployeeId" value="" />
+    </div>
+</div>
+}
+
+<script>
+(function() {
+    var form = document.getElementById('mainForm');
+
+    // 加用户组弹窗
+    var btnAddGroup = document.getElementById('btnAddGroup');
+    var btnConfirmAddGroup = document.getElementById('btnConfirmAddGroup');
+    btnAddGroup.addEventListener('click', function() {
+        if (!document.getElementById('SearchEmployeeId').value) {
+            alert('请先在搜索框中输入员工号。');
+            return;
+        }
+        document.getElementById('modalGroupName').value = '';
+        $('#addGroupModal').modal('show');
+    });
+    btnConfirmAddGroup.addEventListener('click', function() {
+        var groupName = document.getElementById('modalGroupName').value.trim();
+        if (!groupName) {
+            alert('请输入用户组名称。');
+            return;
+        }
+        document.getElementById('GroupName').value = groupName;
+        $('#addGroupModal').modal('hide');
+
+        // 提交表单
+        var actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'addToGroup';
+        form.appendChild(actionInput);
+        form.submit();
+    });
+
+    // Enter 触发搜索
+    form.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') {
+            e.preventDefault();
+            form.querySelector('button[value="search"]').click();
+        }
+    });
+
+    // 防止表单重复提交
+    var submitting = false;
+    form.addEventListener('submit', function(e) {
+        if (submitting) {
+            e.preventDefault();
+            return false;
+        }
+        submitting = true;
+        var btns = form.querySelectorAll('button[type="submit"]');
+        setTimeout(function() {
+            btns.forEach(function(b) { b.disabled = true; });
+        }, 0);
+        setTimeout(function() {
+            submitting = false;
+            btns.forEach(function(b) { b.disabled = false; });
+        }, 5000);
+    });
+})();
+</script>
