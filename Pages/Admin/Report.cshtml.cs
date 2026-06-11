@@ -9,6 +9,7 @@ public class ReportModel : PageModel
 {
     public bool IsAuthenticated { get; set; }
     public string? CurrentEmployeeId { get; set; }
+    public string? CurrentDisplayName { get; set; }
 
     public List<string>? ReportResults { get; set; }
     public List<string>? ChartData { get; set; }
@@ -66,6 +67,8 @@ public class ReportModel : PageModel
             QueryPasswordExpiry(allOus, 30);
         else if (action == "queryPwd60")
             QueryPasswordExpiry(allOus, 60);
+        else if (action == "queryPwdChanged7")
+            QueryPasswordChanged(allOus, 7);
         else
             return Page();
 
@@ -83,6 +86,7 @@ public class ReportModel : PageModel
         {
             IsAuthenticated = true;
             CurrentEmployeeId = HttpContext.Session.GetString("AdminEmployeeId");
+            CurrentDisplayName = HttpContext.Session.GetString("AdminDisplayName") ?? CurrentEmployeeId;
         }
     }
 
@@ -304,6 +308,122 @@ public class ReportModel : PageModel
         }
         s_csvData = sb.ToString();
         s_csvFileName = $"用户报表_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+    }
+
+    private void QueryPasswordChanged(List<(string Path, string Label)> ous, int withinDays)
+    {
+        var allUsers = new List<UserRecord>();
+        var now = DateTime.Now;
+        var cutoff = now.AddDays(-withinDays);
+
+        foreach (var (ouPath, ouLabel) in ous)
+        {
+            try
+            {
+                using var searchRoot = new DirectoryEntry($"LDAP://{ouPath}");
+                using var searcher = new DirectorySearcher(searchRoot)
+                {
+                    Filter = "(&(objectCategory=person)(objectClass=user)(pwdLastSet>=1))",
+                    SearchScope = SearchScope.Subtree,
+                    PageSize = 1000
+                };
+
+                searcher.PropertiesToLoad.AddRange(new[]
+                {
+                    "sAMAccountName", "displayName", "employeeID", "mail",
+                    "userAccountControl", "pwdLastSet"
+                });
+
+                foreach (SearchResult result in searcher.FindAll())
+                {
+                    if (!result.Properties.Contains("pwdLastSet") || result.Properties["pwdLastSet"].Count == 0)
+                        continue;
+                    if (result.Properties["pwdLastSet"][0] is not long pwdTicks || pwdTicks <= 0)
+                        continue;
+
+                    var pwdDate = DateTime.FromFileTimeUtc(pwdTicks);
+                    if (pwdDate < cutoff) continue;
+
+                    var uac = GetProp(result, "userAccountControl");
+                    allUsers.Add(new UserRecord
+                    {
+                        SamAccountName = GetProp(result, "sAMAccountName"),
+                        DisplayName = GetProp(result, "displayName"),
+                        EmployeeId = GetProp(result, "employeeID"),
+                        Mail = GetProp(result, "mail"),
+                        Enabled = uac != "-" && (int.Parse(uac) & 2) == 0 ? "启用" : "禁用",
+                        OuLabel = ouLabel,
+                        PwdLastSet = pwdDate.ToString("yyyy-MM-dd")
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"查询 {ouLabel} 失败：{ex.Message}";
+            }
+        }
+
+        allUsers = allUsers.OrderByDescending(u => u.PwdLastSet).ToList();
+        BuildChangedReport(allUsers, withinDays);
+    }
+
+    private void BuildChangedReport(List<UserRecord> allUsers, int withinDays)
+    {
+        ReportResults = new List<string>();
+        ChartData = new List<string>();
+
+        if (allUsers.Count == 0)
+        {
+            ReportResults.Add($"最近 {withinDays} 天内没有用户更新密码。");
+            return;
+        }
+
+        int wStatus = 4;
+        int wSam = Math.Max(4, allUsers.Max(u => u.SamAccountName.Length));
+        int wName = Math.Max(6, allUsers.Max(u => u.DisplayName.Length));
+        int wEmpId = Math.Max(6, allUsers.Max(u => u.EmployeeId.Length));
+        int wPwdSet = Math.Max(10, allUsers.Max(u => u.PwdLastSet.Length));
+        int wMail = Math.Max(4, allUsers.Max(u => u.Mail.Length));
+        var gap = 2;
+        var sepLen = wStatus + wSam + wName + wEmpId + wPwdSet + wMail + gap * 6;
+        var header = "状态".PadRight(wStatus + gap) + "账号".PadRight(wSam + gap) + "显示名".PadRight(wName + gap) + "员工号".PadRight(wEmpId + gap) + "密码设置时间".PadRight(wPwdSet + gap) + "邮箱";
+        var sep = new string('-', sepLen);
+
+        ReportResults.Add($"最近 {withinDays} 天更新密码用户数: {allUsers.Count}");
+        ReportResults.Add(sep);
+        ReportResults.Add(header);
+        ReportResults.Add(sep);
+
+        foreach (var user in allUsers)
+        {
+            ReportResults.Add(
+                user.Enabled.PadRight(wStatus + gap) +
+                user.SamAccountName.PadRight(wSam + gap) +
+                user.DisplayName.PadRight(wName + gap) +
+                user.EmployeeId.PadRight(wEmpId + gap) +
+                user.PwdLastSet.PadRight(wPwdSet + gap) +
+                user.Mail
+            );
+        }
+        ReportResults.Add(sep);
+
+        int maxCount = allUsers.GroupBy(u => u.OuLabel).Max(g => g.Count());
+        int barMaxWidth = 40;
+        int labelW = allUsers.Select(u => u.OuLabel).Distinct().Max(l => l.Length);
+        ChartData.Add("=== 各 OU 最近更新密码统计 ===");
+        ChartData.Add("");
+        foreach (var g in allUsers.GroupBy(u => u.OuLabel))
+        {
+            var cnt = g.Count();
+            var barLen = maxCount > 0 ? (int)((double)cnt / maxCount * barMaxWidth) : 0;
+            var bar = new string('|', barLen);
+            ChartData.Add($"{g.Key.PadRight(labelW)}  {bar.PadRight(barMaxWidth)}  {cnt.ToString().PadRight(5)}");
+        }
+        ChartData.Add("");
+        ChartData.Add($"合计: {allUsers.Count} 人");
+
+        GenerateCsv(allUsers);
+        ResultMessage = $"查询完成，最近 {withinDays} 天共 {allUsers.Count} 个用户更新密码。";
     }
 
     private List<UserRecord> QuerySingleOU(string ouPath, string ouLabel)

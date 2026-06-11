@@ -22,11 +22,11 @@ public class UserAdminModel : PageModel
     private static List<string>? s_groupHistory;
 
     private static string StoragePath => Path.Combine(AppContext.BaseDirectory, "App_Data");
-    private static string HistoryFile => Path.Combine(StoragePath, "reset_history.json");
-    private static string EmailStatusFile => Path.Combine(StoragePath, "email_status.json");
-    private static string OffboardHistoryFile => Path.Combine(StoragePath, "offboard_history.json");
-    private static string GroupHistoryFile => Path.Combine(StoragePath, "group_history.json");
-    private static string AuditLogFile => Path.Combine(StoragePath, "audit.log");
+    private static string HistoryFile => Path.Combine(StoragePath, "reset_history.dat");
+    private static string EmailStatusFile => Path.Combine(StoragePath, "email_status.dat");
+    private static string OffboardHistoryFile => Path.Combine(StoragePath, "offboard_history.dat");
+    private static string GroupHistoryFile => Path.Combine(StoragePath, "group_history.dat");
+    private static string AuditLogFile => Path.Combine(StoragePath, "audit.dat");
 
     public UserAdminModel(ILogger<UserAdminModel> logger, IConfiguration configuration)
     {
@@ -36,6 +36,7 @@ public class UserAdminModel : PageModel
 
     public bool IsAuthenticated { get; set; }
     public string? CurrentEmployeeId { get; set; }
+    public string? CurrentDisplayName { get; set; }
 
     [BindProperty]
     public string? SearchEmployeeId { get; set; }
@@ -176,6 +177,7 @@ public class UserAdminModel : PageModel
         {
             IsAuthenticated = true;
             CurrentEmployeeId = HttpContext.Session.GetString("AdminEmployeeId");
+            CurrentDisplayName = HttpContext.Session.GetString("AdminDisplayName") ?? CurrentEmployeeId;
         }
     }
 
@@ -629,7 +631,7 @@ public class UserAdminModel : PageModel
             var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | {entry}{Environment.NewLine}";
             lock (s_lock)
             {
-                System.IO.File.AppendAllText(AuditLogFile, line);
+                FileProtection.AppendAllText(AuditLogFile, line);
             }
         }
         catch { }
@@ -646,9 +648,9 @@ public class UserAdminModel : PageModel
 
             try
             {
-                if (System.IO.File.Exists(OffboardHistoryFile))
+                if (FileProtection.Exists(OffboardHistoryFile))
                 {
-                    var json = System.IO.File.ReadAllText(OffboardHistoryFile);
+                    var json = FileProtection.ReadAllText(OffboardHistoryFile);
                     s_offboardHistory = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
                 }
                 else
@@ -673,9 +675,9 @@ public class UserAdminModel : PageModel
 
             try
             {
-                if (System.IO.File.Exists(GroupHistoryFile))
+                if (FileProtection.Exists(GroupHistoryFile))
                 {
-                    var json = System.IO.File.ReadAllText(GroupHistoryFile);
+                    var json = FileProtection.ReadAllText(GroupHistoryFile);
                     s_groupHistory = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
                 }
                 else
@@ -703,7 +705,7 @@ public class UserAdminModel : PageModel
             try
             {
                 Directory.CreateDirectory(StoragePath);
-                System.IO.File.WriteAllText(GroupHistoryFile, JsonSerializer.Serialize(s_groupHistory));
+                FileProtection.WriteAllText(GroupHistoryFile, JsonSerializer.Serialize(s_groupHistory));
             }
             catch { }
         }
@@ -721,7 +723,7 @@ public class UserAdminModel : PageModel
             try
             {
                 Directory.CreateDirectory(StoragePath);
-                System.IO.File.WriteAllText(OffboardHistoryFile, JsonSerializer.Serialize(s_offboardHistory));
+                FileProtection.WriteAllText(OffboardHistoryFile, JsonSerializer.Serialize(s_offboardHistory));
             }
             catch { }
         }
@@ -736,9 +738,9 @@ public class UserAdminModel : PageModel
 
             try
             {
-                if (System.IO.File.Exists(HistoryFile))
+                if (FileProtection.Exists(HistoryFile))
                 {
-                    var json = System.IO.File.ReadAllText(HistoryFile);
+                    var json = FileProtection.ReadAllText(HistoryFile);
                     s_resetHistory = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
                 }
                 else
@@ -766,7 +768,7 @@ public class UserAdminModel : PageModel
             try
             {
                 Directory.CreateDirectory(StoragePath);
-                System.IO.File.WriteAllText(HistoryFile, JsonSerializer.Serialize(s_resetHistory));
+                FileProtection.WriteAllText(HistoryFile, JsonSerializer.Serialize(s_resetHistory));
             }
             catch { }
         }
@@ -781,9 +783,9 @@ public class UserAdminModel : PageModel
 
             try
             {
-                if (System.IO.File.Exists(EmailStatusFile))
+                if (FileProtection.Exists(EmailStatusFile))
                 {
-                    var json = System.IO.File.ReadAllText(EmailStatusFile);
+                    var json = FileProtection.ReadAllText(EmailStatusFile);
                     s_emailStatus = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
                 }
                 else
@@ -811,7 +813,7 @@ public class UserAdminModel : PageModel
             try
             {
                 Directory.CreateDirectory(StoragePath);
-                System.IO.File.WriteAllText(EmailStatusFile, JsonSerializer.Serialize(s_emailStatus));
+                FileProtection.WriteAllText(EmailStatusFile, JsonSerializer.Serialize(s_emailStatus));
             }
             catch { }
         }
@@ -874,14 +876,14 @@ public class UserAdminModel : PageModel
             s_groupHistory = new List<string>();
             try
             {
-                if (System.IO.File.Exists(HistoryFile))
-                    System.IO.File.Delete(HistoryFile);
-                if (System.IO.File.Exists(EmailStatusFile))
-                    System.IO.File.Delete(EmailStatusFile);
-                if (System.IO.File.Exists(OffboardHistoryFile))
-                    System.IO.File.Delete(OffboardHistoryFile);
-                if (System.IO.File.Exists(GroupHistoryFile))
-                    System.IO.File.Delete(GroupHistoryFile);
+                if (FileProtection.Exists(HistoryFile))
+                    FileProtection.Delete(HistoryFile);
+                if (FileProtection.Exists(EmailStatusFile))
+                    FileProtection.Delete(EmailStatusFile);
+                if (FileProtection.Exists(OffboardHistoryFile))
+                    FileProtection.Delete(OffboardHistoryFile);
+                if (FileProtection.Exists(GroupHistoryFile))
+                    FileProtection.Delete(GroupHistoryFile);
             }
             catch { }
         }

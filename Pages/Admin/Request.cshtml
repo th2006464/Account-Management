@@ -1,0 +1,166 @@
+@page "/Admin/Request"
+@model AccountManagement.Pages.Admin.RequestModel
+@{
+    ViewData["Title"] = "入职审批";
+}
+
+@if (!Model.IsAuthenticated)
+{
+    <div class="alert alert-danger" style="margin-top: 20px;">请先<a asp-page="/Admin/Login">登录</a>。</div>
+    return;
+}
+
+<div class="alert alert-info" style="margin-top: 20px;">
+    <strong>入职审批</strong> — 当前登录：<strong>@Model.CurrentDisplayName</strong>
+    <span style="float: right;">
+        <a asp-page="/Admin/UserAdmin">返回管理主页</a> |
+        <a asp-page="/Admin/Login" asp-page-handler="Logout">退出登录</a>
+    </span>
+    <div style="clear: both;"></div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ResultMessage))
+{
+    <div class="alert alert-success">@Model.ResultMessage</div>
+}
+
+<div class="panel panel-warning" style="margin-top: 20px;">
+    <div class="panel-heading"><strong>待审批申请</strong> <span class="badge">@Model.PendingRequests.Count</span></div>
+    <div class="panel-body">
+        @if (Model.PendingRequests.Count == 0)
+        {
+            <p style="color: #999;">暂无待审批的入职申请。</p>
+        }
+        else
+        {
+            foreach (var req in Model.PendingRequests)
+            {
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <strong>@req.CnName</strong> (@req.EnName)<br />
+                                员工号: @req.EmployeeId | 手机: @req.Mobile<br />
+                                邮箱: @req.NeedEmail | 区域: @req.Region<br />
+                                @if (!string.IsNullOrEmpty(req.ContactEmail))
+                                {<span>回传邮箱: @req.ContactEmail<br /></span>}
+                                @if (!string.IsNullOrEmpty(req.ManagerEmail))
+                                {<span>上级邮箱: @req.ManagerEmail<br /></span>}
+                                <small style="color: #999;">申请编号: @req.Id | 提交时间: @req.SubmitTime</small>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <form method="post" style="display: inline;">
+                                    <button type="submit" name="action" value="approve_@req.Id" class="btn btn-success">批准创建</button>
+                                    <button type="submit" name="action" value="reject_@req.Id" class="btn btn-danger" onclick="return confirm('确认取消该申请？');">取消申请</button>
+                                    <button type="button" class="btn btn-default" onclick="openEdit('@req.Id','@req.CnName','@req.EnName','@req.EmployeeId','@req.Mobile','@req.NeedEmail','@req.Region','@req.ContactEmail','@req.ManagerEmail')">编辑信息</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@if (Model.ProcessedRequests.Count > 0)
+{
+    <div class="panel panel-default" style="margin-top: 20px;">
+        <div class="panel-heading"><strong>已处理记录</strong> <span class="badge">@Model.ProcessedRequests.Count</span></div>
+        <div class="panel-body">
+            <table class="table table-striped" style="font-size: 13px;">
+                <thead>
+                    <tr>
+                        <th>中文名</th><th>英文名</th><th>员工号</th><th>区域</th><th>状态</th><th>审批人</th><th>时间</th><th>密码</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var req in Model.ProcessedRequests)
+                    {
+                        <tr>
+                            <td>@req.CnName</td>
+                            <td>@req.EnName</td>
+                            <td>@req.EmployeeId</td>
+                            <td>@req.Region</td>
+                            <td>@(req.Status == "approved" ? "已批准" : "已取消")</td>
+                            <td>@req.ReviewedBy</td>
+                            <td>@req.ReviewTime</td>
+                            <td>@(req.NewPassword ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<form method="post" id="editForm" style="display: none;">
+    <input type="hidden" name="action" value="edit" />
+    <input type="hidden" name="editId" id="editIdHidden" />
+    <input type="hidden" name="editCnName" id="editCnNameHidden" />
+    <input type="hidden" name="editEnName" id="editEnNameHidden" />
+    <input type="hidden" name="editEmployeeId" id="editEmployeeIdHidden" />
+    <input type="hidden" name="editMobile" id="editMobileHidden" />
+    <input type="hidden" name="editNeedEmail" id="editNeedEmailHidden" />
+    <input type="hidden" name="editRegion" id="editRegionHidden" />
+    <input type="hidden" name="editContactEmail" id="editContactEmailHidden" />
+    <input type="hidden" name="editManagerEmail" id="editManagerEmailHidden" />
+</form>
+
+<!-- 编辑信息弹窗 -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">编辑入职申请</h4>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editId" />
+                <div class="form-group"><label>中文名</label><input class="form-control" id="editCnName" /></div>
+                <div class="form-group"><label>英文名</label><input class="form-control" id="editEnName" /></div>
+                <div class="form-group"><label>员工编号</label><input class="form-control" id="editEmployeeId" maxlength="8" /></div>
+                <div class="form-group"><label>手机号</label><input class="form-control" id="editMobile" /></div>
+                <div class="form-group"><label>是否申请邮箱</label><select class="form-control" id="editNeedEmail"><option>否</option><option>是</option></select></div>
+                <div class="form-group"><label>员工所属区域</label><input class="form-control" id="editRegion" /></div>
+                <div class="form-group"><label>信息回传邮箱地址</label><input class="form-control" id="editContactEmail" /></div>
+                <div class="form-group"><label>直接上级邮箱地址</label><input class="form-control" id="editManagerEmail" /></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" id="btnSaveEdit" class="btn btn-primary">保存修改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openEdit(id, cn, en, emp, mob, ne, reg, ce, me) {
+    document.getElementById('editId').value = id;
+    document.getElementById('editCnName').value = cn;
+    document.getElementById('editEnName').value = en;
+    document.getElementById('editEmployeeId').value = emp;
+    document.getElementById('editMobile').value = mob;
+    document.getElementById('editNeedEmail').value = ne;
+    document.getElementById('editRegion').value = reg;
+    document.getElementById('editContactEmail').value = ce || '';
+    document.getElementById('editManagerEmail').value = me || '';
+    $('#editModal').modal('show');
+}
+document.getElementById('btnSaveEdit').addEventListener('click', function() {
+    document.getElementById('editIdHidden').value = document.getElementById('editId').value;
+    document.getElementById('editCnNameHidden').value = document.getElementById('editCnName').value;
+    document.getElementById('editEnNameHidden').value = document.getElementById('editEnName').value;
+    document.getElementById('editEmployeeIdHidden').value = document.getElementById('editEmployeeId').value;
+    document.getElementById('editMobileHidden').value = document.getElementById('editMobile').value;
+    document.getElementById('editNeedEmailHidden').value = document.getElementById('editNeedEmail').value;
+    document.getElementById('editRegionHidden').value = document.getElementById('editRegion').value;
+    document.getElementById('editContactEmailHidden').value = document.getElementById('editContactEmail').value;
+    document.getElementById('editManagerEmailHidden').value = document.getElementById('editManagerEmail').value;
+    document.getElementById('editForm').submit();
+});
+</script>

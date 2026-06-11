@@ -1,3 +1,4 @@
+using AccountManagement.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -9,6 +10,7 @@ public class AdminLogModel : PageModel
 
     public bool IsAuthenticated { get; set; }
     public string? CurrentEmployeeId { get; set; }
+    public string? CurrentDisplayName { get; set; }
 
     public List<string> AllLogs { get; set; } = new();
     public List<string> PageLogs { get; set; } = new();
@@ -18,7 +20,7 @@ public class AdminLogModel : PageModel
 
     public string AuditLogPath => AuditLogFile;
 
-    private static string AuditLogFile => Path.Combine(AppContext.BaseDirectory, "App_Data", "audit.log");
+    private static string AuditLogFile => Path.Combine(AppContext.BaseDirectory, "App_Data", "audit.dat");
 
     public void OnGet(int page = 1)
     {
@@ -36,6 +38,7 @@ public class AdminLogModel : PageModel
         {
             IsAuthenticated = true;
             CurrentEmployeeId = HttpContext.Session.GetString("AdminEmployeeId");
+            CurrentDisplayName = HttpContext.Session.GetString("AdminDisplayName") ?? CurrentEmployeeId;
         }
 
         if (CurrentEmployeeId != "15005035")
@@ -47,9 +50,9 @@ public class AdminLogModel : PageModel
         // 合并所有审计日志
         try
         {
-            if (System.IO.File.Exists(AuditLogFile))
+            if (FileProtection.Exists(AuditLogFile))
             {
-                var lines = System.IO.File.ReadAllLines(AuditLogFile);
+                var lines = FileProtection.ReadAllLines(AuditLogFile);
                 AllLogs = lines.Reverse().ToList();
             }
         }
@@ -60,20 +63,20 @@ public class AdminLogModel : PageModel
         {
             var emails = new List<(string, string)>(); // (时间前缀, 内容)
 
-            var resetEmailFile = Path.Combine(AppContext.BaseDirectory, "App_Data", "email_status.json");
-            if (System.IO.File.Exists(resetEmailFile))
+            var resetEmailFile = Path.Combine(AppContext.BaseDirectory, "App_Data", "email_status.dat");
+            if (FileProtection.Exists(resetEmailFile))
             {
-                var json = System.IO.File.ReadAllText(resetEmailFile);
+                var json = FileProtection.ReadAllText(resetEmailFile);
                 var list = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json);
                 if (list != null)
                     foreach (var item in list)
                         emails.Add((item, "[密码重置]"));
             }
 
-            var createEmailFile = Path.Combine(AppContext.BaseDirectory, "App_Data", "newuser_email_status.json");
-            if (System.IO.File.Exists(createEmailFile))
+            var createEmailFile = Path.Combine(AppContext.BaseDirectory, "App_Data", "newuser_email_status.dat");
+            if (FileProtection.Exists(createEmailFile))
             {
-                var json = System.IO.File.ReadAllText(createEmailFile);
+                var json = FileProtection.ReadAllText(createEmailFile);
                 var list = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json);
                 if (list != null)
                     foreach (var item in list)

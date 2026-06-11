@@ -12,6 +12,7 @@ public class SinarmasUserModel : PageModel
 {
     public bool IsAuthenticated { get; set; }
     public string? CurrentEmployeeId { get; set; }
+    public string? CurrentDisplayName { get; set; }
 
     [BindProperty]
     public string? SearchEmployeeId { get; set; }
@@ -23,6 +24,12 @@ public class SinarmasUserModel : PageModel
     public void OnGet()
     {
         CheckAuth();
+        if (!IsAuthenticated) return;
+
+        if (TempData["UserDetail"] is string ud) UserDetail = ud;
+        if (TempData["ResultMessage"] is string rm) ResultMessage = rm;
+        if (TempData["ErrorMessage"] is string em) ErrorMessage = em;
+        if (TempData["SearchEmployeeId"] is string se) SearchEmployeeId = se;
     }
 
     public IActionResult OnPost(string action)
@@ -50,6 +57,7 @@ public class SinarmasUserModel : PageModel
         {
             IsAuthenticated = true;
             CurrentEmployeeId = HttpContext.Session.GetString("AdminEmployeeId");
+            CurrentDisplayName = HttpContext.Session.GetString("AdminDisplayName") ?? CurrentEmployeeId;
         }
     }
 

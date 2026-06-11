@@ -1,3 +1,4 @@
+using AccountManagement.Helpers;
 using System.DirectoryServices.AccountManagement;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +9,7 @@ namespace AccountManagement.Pages.Admin;
 public class LoginModel : PageModel
 {
     private static readonly object s_lock = new();
-    private static string AdminFile => Path.Combine(AppContext.BaseDirectory, "App_Data", "admins.json");
+    private static string AdminFile => Path.Combine(AppContext.BaseDirectory, "App_Data", "admins.dat");
 
     [BindProperty]
     public string? EmployeeId { get; set; }
@@ -51,8 +52,14 @@ public class LoginModel : PageModel
                 return Page();
             }
 
+            using var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, EmployeeId);
+            var displayName = EmployeeId;
+            if (user != null && !string.IsNullOrEmpty(user.DisplayName))
+                displayName = $"{EmployeeId} | {user.DisplayName}";
+
             HttpContext.Session.SetString("AdminLoggedIn", "true");
             HttpContext.Session.SetString("AdminEmployeeId", EmployeeId);
+            HttpContext.Session.SetString("AdminDisplayName", displayName);
 
             WriteLoginLog(EmployeeId);
 
@@ -74,7 +81,7 @@ public class LoginModel : PageModel
             var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | 管理员登录 | 账号: {employeeId}{Environment.NewLine}";
             lock (s_lock)
             {
-                System.IO.File.AppendAllText(Path.Combine(dir, "audit.log"), line);
+                FileProtection.AppendAllText(Path.Combine(dir, "audit.dat"), line);
             }
         }
         catch { }
@@ -97,9 +104,9 @@ public class LoginModel : PageModel
                 var dir = Path.GetDirectoryName(AdminFile);
                 if (dir != null) Directory.CreateDirectory(dir);
 
-                if (System.IO.File.Exists(AdminFile))
+                if (FileProtection.Exists(AdminFile))
                 {
-                    var json = System.IO.File.ReadAllText(AdminFile);
+                    var json = FileProtection.ReadAllText(AdminFile);
                     return JsonSerializer.Deserialize<List<string>>(json) ?? new List<string> { "15005035" };
                 }
             }
@@ -116,7 +123,7 @@ public class LoginModel : PageModel
             {
                 var dir = Path.GetDirectoryName(AdminFile);
                 if (dir != null) Directory.CreateDirectory(dir);
-                System.IO.File.WriteAllText(AdminFile, JsonSerializer.Serialize(list));
+                FileProtection.WriteAllText(AdminFile, JsonSerializer.Serialize(list));
             }
             catch { }
         }

@@ -256,7 +256,7 @@ public class IndexModel : PageModel
             var dir = Path.Combine(AppContext.BaseDirectory, "App_Data");
             Directory.CreateDirectory(dir);
             var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | {entry}{Environment.NewLine}";
-            System.IO.File.AppendAllText(Path.Combine(dir, "audit.log"), line);
+            FileProtection.AppendAllText(Path.Combine(dir, "audit.dat"), line);
         }
         catch { }
     }

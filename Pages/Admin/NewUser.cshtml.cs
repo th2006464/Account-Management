@@ -1,3 +1,4 @@
+using AccountManagement.Helpers;
 using System.DirectoryServices;
 using System.Net;
 using System.Net.Mail;
@@ -18,8 +19,8 @@ public class NewUserModel : PageModel
     private static List<string>? s_emailStatus;
 
     private static string StoragePath => Path.Combine(AppContext.BaseDirectory, "App_Data");
-    private static string CreateHistoryFile => Path.Combine(StoragePath, "create_history.json");
-    private static string NewUserEmailStatusFile => Path.Combine(StoragePath, "newuser_email_status.json");
+    private static string CreateHistoryFile => Path.Combine(StoragePath, "create_history.dat");
+    private static string NewUserEmailStatusFile => Path.Combine(StoragePath, "newuser_email_status.dat");
 
     public NewUserModel(ILogger<NewUserModel> logger, IConfiguration configuration)
     {
@@ -29,6 +30,7 @@ public class NewUserModel : PageModel
 
     public bool IsAuthenticated { get; set; }
     public string? CurrentEmployeeId { get; set; }
+    public string? CurrentDisplayName { get; set; }
 
     [BindProperty]
     public string? CnName { get; set; }
@@ -101,6 +103,7 @@ public class NewUserModel : PageModel
         {
             IsAuthenticated = true;
             CurrentEmployeeId = HttpContext.Session.GetString("AdminEmployeeId");
+            CurrentDisplayName = HttpContext.Session.GetString("AdminDisplayName") ?? CurrentEmployeeId;
         }
     }
 
@@ -279,7 +282,7 @@ public class NewUserModel : PageModel
 
     // ---- 审计日志（永不清除） ----
 
-    private static string AuditLogPath => Path.Combine(StoragePath, "audit.log");
+    private static string AuditLogPath => Path.Combine(StoragePath, "audit.dat");
 
     private static void WriteAuditLog(string entry)
     {
@@ -289,7 +292,7 @@ public class NewUserModel : PageModel
             var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | {entry}{Environment.NewLine}";
             lock (s_lock)
             {
-                System.IO.File.AppendAllText(AuditLogPath, line);
+                FileProtection.AppendAllText(AuditLogPath, line);
             }
         }
         catch { }
@@ -303,10 +306,10 @@ public class NewUserModel : PageModel
             s_emailStatus = new List<string>();
             try
             {
-                if (System.IO.File.Exists(CreateHistoryFile))
-                    System.IO.File.Delete(CreateHistoryFile);
-                if (System.IO.File.Exists(NewUserEmailStatusFile))
-                    System.IO.File.Delete(NewUserEmailStatusFile);
+                if (FileProtection.Exists(CreateHistoryFile))
+                    FileProtection.Delete(CreateHistoryFile);
+                if (FileProtection.Exists(NewUserEmailStatusFile))
+                    FileProtection.Delete(NewUserEmailStatusFile);
             }
             catch { }
         }
@@ -326,9 +329,9 @@ public class NewUserModel : PageModel
 
             try
             {
-                if (System.IO.File.Exists(CreateHistoryFile))
+                if (FileProtection.Exists(CreateHistoryFile))
                 {
-                    var json = System.IO.File.ReadAllText(CreateHistoryFile);
+                    var json = FileProtection.ReadAllText(CreateHistoryFile);
                     s_createHistory = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
                 }
                 else
@@ -356,7 +359,7 @@ public class NewUserModel : PageModel
             try
             {
                 Directory.CreateDirectory(StoragePath);
-                System.IO.File.WriteAllText(CreateHistoryFile, JsonSerializer.Serialize(s_createHistory));
+                FileProtection.WriteAllText(CreateHistoryFile, JsonSerializer.Serialize(s_createHistory));
             }
             catch { }
         }
@@ -371,9 +374,9 @@ public class NewUserModel : PageModel
 
             try
             {
-                if (System.IO.File.Exists(NewUserEmailStatusFile))
+                if (FileProtection.Exists(NewUserEmailStatusFile))
                 {
-                    var json = System.IO.File.ReadAllText(NewUserEmailStatusFile);
+                    var json = FileProtection.ReadAllText(NewUserEmailStatusFile);
                     s_emailStatus = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
                 }
                 else
@@ -401,7 +404,7 @@ public class NewUserModel : PageModel
             try
             {
                 Directory.CreateDirectory(StoragePath);
-                System.IO.File.WriteAllText(NewUserEmailStatusFile, JsonSerializer.Serialize(s_emailStatus));
+                FileProtection.WriteAllText(NewUserEmailStatusFile, JsonSerializer.Serialize(s_emailStatus));
             }
             catch { }
         }

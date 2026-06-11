@@ -8,7 +8,9 @@
       "Bash(cp \"d:/VScode/iis改密码/bin/Publish/appsettings.json\" \"d:/VScode/Account Management/\")",
       "Bash(cp \"d:/VScode/iis改密码/bin/Publish/AccountManagement.dll\" \"d:/VScode/Account Management/\" && echo \"Done\")",
       "Bash(git init *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(gh repo *)"
     ],
     "additionalDirectories": [
       "d:\\VScode\\Account Management"

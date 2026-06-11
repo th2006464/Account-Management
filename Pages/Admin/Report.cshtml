@@ -11,7 +11,7 @@
 }
 
 <div class="alert alert-info" style="margin-top: 20px;">
-    <strong>用户报表</strong> — 当前登录：<strong>@Model.CurrentEmployeeId</strong>
+    <strong>用户报表</strong> — 当前登录：<strong>@Model.CurrentDisplayName</strong>
     <span style="float: right;">
         <a asp-page="/Admin/UserAdmin">返回管理主页</a> |
         <a asp-page="/Admin/Login" asp-page-handler="Logout">退出登录</a>
@@ -39,6 +39,7 @@
             <button type="submit" name="action" value="queryPwd7" class="btn btn-danger">密码7天内到期</button>
             <button type="submit" name="action" value="queryPwd30" class="btn btn-warning">密码30天内到期</button>
             <button type="submit" name="action" value="queryPwd60" class="btn btn-default">密码60天内到期</button>
+            <button type="submit" name="action" value="queryPwdChanged7" class="btn btn-default">最近7天更新密码用户</button>
         </form>
     </div>
 </div>
