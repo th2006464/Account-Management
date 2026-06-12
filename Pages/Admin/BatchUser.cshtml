@@ -1,0 +1,72 @@
+@page "/Admin/BatchUser"
+@model AccountManagement.Pages.Admin.BatchUserModel
+@{
+    ViewData["Title"] = "批量用户管理";
+}
+
+@if (!Model.IsAuthenticated)
+{
+    <div class="alert alert-danger">请先<a asp-page="/Admin/Login">登录</a>。</div>
+    return;
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ResultMessage))
+{
+    <div class="alert alert-success">@Model.ResultMessage</div>
+}
+
+<form method="post" id="mainForm">
+    <div class="panel panel-default" style="margin-top:8px;">
+        <div class="panel-heading" style="padding:6px 12px;"><strong>批量用户管理</strong></div>
+        <div class="panel-body" style="padding:8px 12px;">
+            <div class="form-group" style="margin-bottom:8px;">
+                <label style="font-size:12px;">输入员工号（每行一个，或用逗号/空格分隔）</label>
+                <textarea class="form-control" name="InputIds" rows="6" style="font-size:13px;resize:vertical;" placeholder="15005035&#10;14205424&#10;98970505">@Model.InputIds</textarea>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button type="submit" name="action" value="search" class="btn btn-primary btn-sm">查询</button>
+                <button type="submit" name="action" value="enable" class="btn btn-success btn-sm">启用</button>
+                <button type="submit" name="action" value="disable" class="btn btn-warning btn-sm">禁用</button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="confirmReset()">批量重置密码</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@if (Model.Results.Count > 0)
+{
+    <div class="panel panel-default" style="margin-top:8px;">
+        <div class="panel-heading" style="padding:6px 12px;"><strong>执行结果</strong> <span class="badge">成功 @Model.SuccessCount</span> <span class="badge">失败 @Model.FailCount</span></div>
+        <div class="panel-body" style="padding:6px 12px;">
+            <pre style="max-height:400px;overflow-y:auto;font-size:12px;margin:0;">@string.Join(Environment.NewLine, Model.Results)</pre>
+        </div>
+    </div>
+}
+
+<!-- 二次确认弹窗 -->
+<div class="modal fade" id="confirmModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="padding:10px 15px;"><button type="button" class="close" data-dismiss="modal">&times;</button><h5 class="modal-title">操作确认</h5></div>
+            <div class="modal-body" style="padding:15px;"><strong>确认批量重置密码？</strong><br/><small>将生成随机密码并发送邮件通知。</small></div>
+            <div class="modal-footer" style="padding:8px 15px;">
+                <button type="button" class="btn btn-default btn-sm" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger btn-sm" id="btnConfirmReset">确认</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmReset(){ $('#confirmModal').modal('show'); }
+document.getElementById('btnConfirmReset').addEventListener('click',function(){
+    $('#confirmModal').modal('hide');
+    var input=document.createElement('input');input.type='hidden';input.name='action';input.value='reset';
+    document.getElementById('mainForm').appendChild(input);document.getElementById('mainForm').submit();
+});
+(function(){var f=document.getElementById('mainForm');var s=false;f.addEventListener('submit',function(e){if(s){e.preventDefault();return}s=true;setTimeout(function(){f.querySelectorAll('button[type="submit"]').forEach(function(b){b.disabled=true})},0);setTimeout(function(){s=false},5000)})})();
+</script>

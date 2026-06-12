@@ -21,26 +21,26 @@
 
 <form method="post" id="mainForm">
     <div class="panel panel-default">
-        <div class="panel-heading"><strong>搜索用户</strong></div>
-        <div class="panel-body">
-            <div style="display: flex; gap: 10px;">
-                <input class="form-control" id="SearchEmployeeId" name="SearchEmployeeId" value="@Model.SearchEmployeeId" maxlength="8" style="flex: 1;" placeholder="输入8位员工号" autocomplete="off" />
+        <div class="panel-heading" style="padding:6px 12px;"><strong>搜索用户</strong></div>
+        <div class="panel-body" style="padding:8px 12px;">
+            <div style="display:flex;gap:8px;">
+                <input class="form-control" id="SearchEmployeeId" name="SearchEmployeeId" value="@Model.SearchEmployeeId" style="flex:1;" placeholder="输入员工号或姓名关键字搜索" autocomplete="off" />
                 <button type="submit" name="action" value="search" class="btn btn-primary">搜索</button>
             </div>
         </div>
     </div>
 
-    <div class="panel panel-warning" style="margin-top: 20px;">
-        <div class="panel-heading"><strong>控制面板</strong></div>
-        <div class="panel-body">
-            <div style="display: flex; gap: 20px;">
-                <button type="submit" name="action" value="reset" class="btn btn-success">重置密码</button>
-                <button type="submit" name="action" value="offboard" class="btn btn-danger">一键离职</button>
-                <button type="submit" name="action" value="unlock" class="btn btn-warning" style="margin-left: auto;">解锁所有账号</button>
+    <div class="panel panel-warning" style="margin-top:8px;">
+        <div class="panel-heading" style="padding:6px 12px;"><strong>控制面板</strong></div>
+        <div class="panel-body" style="padding:8px 12px;">
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                <button type="submit" name="action" value="reset" class="btn btn-success btn-sm">重置密码</button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="confirmAction('offboard','离职')">一键离职</button>
+                <button type="submit" name="action" value="unlock" class="btn btn-warning btn-sm" style="margin-left:auto;">解锁所有账号</button>
             </div>
-            <div style="display: flex; gap: 20px; margin-top: 10px;">
-                <button type="submit" name="action" value="clearHistory" class="btn btn-default" onclick="return confirm('此操作会清空所有操作记录，确认清空吗？');">清空记录</button>
-                <button type="button" id="btnAddGroup" class="btn btn-default">加用户组</button>
+            <div style="display:flex;gap:12px;margin-top:8px;">
+                <button type="button" class="btn btn-default btn-sm" onclick="confirmAction('clearHistory','清空记录')">清空记录</button>
+                <button type="button" id="btnAddGroup" class="btn btn-default btn-sm">加用户组</button>
             </div>
         </div>
     </div>
@@ -72,68 +72,60 @@
 
 @if (!string.IsNullOrEmpty(Model.UserDetail))
 {
-    <div class="panel panel-success">
-        <div class="panel-heading">用户详细信息</div>
-        <div class="panel-body">
-            <pre>@Model.UserDetail</pre>
-        </div>
+    <div class="panel panel-success" style="margin-top:8px;">
+        <div class="panel-heading" style="padding:6px 12px;">用户详细信息</div>
+        <div class="panel-body" style="padding:8px 12px;"><pre style="margin:0;font-size:12px;">@Model.UserDetail</pre></div>
     </div>
 }
 
 @if (Model.ResetResults != null && Model.ResetResults.Count > 0)
 {
-    <div class="panel panel-success" style="margin-top: 10px;">
-        <div class="panel-heading">密码重置结果</div>
-        <div class="panel-body">
-            <pre>@string.Join(Environment.NewLine, Model.ResetResults)</pre>
-        </div>
+    <div class="panel panel-success" style="margin-top:8px;">
+        <div class="panel-heading" style="padding:6px 12px;">密码重置结果</div>
+        <div class="panel-body" style="padding:6px 12px;"><pre style="margin:0;font-size:12px;">@string.Join(Environment.NewLine, Model.ResetResults)</pre></div>
     </div>
 }
 
 @if (Model.OffboardResults != null && Model.OffboardResults.Count > 0)
 {
-    <div class="panel panel-danger" style="margin-top: 10px;">
-        <div class="panel-heading">离职处理结果</div>
-        <div class="panel-body">
-            <pre>@string.Join(Environment.NewLine, Model.OffboardResults)</pre>
-        </div>
+    <div class="panel panel-danger" style="margin-top:8px;">
+        <div class="panel-heading" style="padding:6px 12px;">离职处理结果</div>
+        <div class="panel-body" style="padding:6px 12px;"><pre style="margin:0;font-size:12px;">@string.Join(Environment.NewLine, Model.OffboardResults)</pre></div>
     </div>
 }
 
 @if (Model.UnlockResults != null && Model.UnlockResults.Count > 0)
 {
-    <div class="panel panel-success" style="margin-top: 10px;">
-        <div class="panel-heading">解锁结果</div>
-        <div class="panel-body">
-            <pre>@string.Join(Environment.NewLine, Model.UnlockResults)</pre>
-        </div>
+    <div class="panel panel-success" style="margin-top:8px;">
+        <div class="panel-heading" style="padding:6px 12px;">解锁结果</div>
+        <div class="panel-body" style="padding:6px 12px;"><pre style="margin:0;font-size:12px;">@string.Join(Environment.NewLine, Model.UnlockResults)</pre></div>
     </div>
 }
 
-<div class="panel panel-info" style="margin-top: 20px;">
-    <div class="panel-heading"><strong>操作记录</strong></div>
-    <div class="panel-body">
+<div class="panel panel-info" style="margin-top:8px;">
+    <div class="panel-heading" style="padding:6px 12px;"><strong>操作记录</strong></div>
+    <div class="panel-body" style="padding:6px 12px;">
         @if (Model.OperationHistory != null && Model.OperationHistory.Count > 0)
         {
-            <pre>@string.Join(Environment.NewLine, Model.OperationHistory)</pre>
+            <pre style="max-height:200px;overflow-y:auto;font-size:12px;margin:0;">@string.Join(Environment.NewLine, Model.OperationHistory)</pre>
         }
         else
         {
-            <p style="color: #999;">暂无操作记录。</p>
+            <p style="color:#999;margin:0;">暂无操作记录。</p>
         }
     </div>
 </div>
 
-<div class="panel panel-default" style="margin-top: 10px;">
-    <div class="panel-heading"><strong>邮件发送记录</strong></div>
-    <div class="panel-body">
+<div class="panel panel-default" style="margin-top:8px;">
+    <div class="panel-heading" style="padding:6px 12px;"><strong>邮件发送记录</strong></div>
+    <div class="panel-body" style="padding:6px 12px;">
         @if (Model.EmailHistory != null && Model.EmailHistory.Count > 0)
         {
-            <pre>@string.Join(Environment.NewLine, Model.EmailHistory)</pre>
+            <pre style="max-height:150px;overflow-y:auto;font-size:12px;margin:0;">@string.Join(Environment.NewLine, Model.EmailHistory)</pre>
         }
         else
         {
-            <p style="color: #999;">暂无邮件记录。</p>
+            <p style="color:#999;margin:0;">暂无邮件记录。</p>
         }
     </div>
 </div>
@@ -141,26 +133,26 @@
 @if (Model.CurrentEmployeeId == "15005035")
 {
 <form method="post">
-<div class="panel panel-default" style="margin-top: 20px;">
-    <div class="panel-heading"><strong>管理员授权</strong></div>
-    <div class="panel-body">
-        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-            <input class="form-control" name="AddAdminEmployeeId" maxlength="8" placeholder="输入8位员工号" style="flex: 1;" autocomplete="off" />
-            <button type="submit" name="action" value="addAdmin" class="btn btn-success">添加管理员</button>
+<div class="panel panel-default" style="margin-top:8px;">
+    <div class="panel-heading" style="padding:6px 12px;"><strong>管理员授权</strong></div>
+    <div class="panel-body" style="padding:8px 12px;">
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <input class="form-control" name="AddAdminEmployeeId" maxlength="8" placeholder="输入8位员工号" style="flex:1;" autocomplete="off" />
+            <button type="submit" name="action" value="addAdmin" class="btn btn-success btn-sm">添加管理员</button>
         </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-            <span style="line-height: 2; margin-right: 8px;">当前管理员：</span>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <span style="line-height:1.8;margin-right:6px;font-size:12px;">当前管理员：</span>
             @if (Model.AdminList != null)
             {
                 foreach (var admin in Model.AdminList)
                 {
                     if (admin == "15005035")
                     {
-                        <span class="btn btn-default btn-sm" style="pointer-events: none; opacity: 0.7;">@admin</span>
+                        <span class="btn btn-default btn-xs" style="pointer-events:none;opacity:0.7;">@admin</span>
                     }
                     else
                     {
-                        <button type="submit" name="action" value="removeAdmin" class="btn btn-default btn-sm" onclick="document.getElementsByName('RemoveAdminEmployeeId')[0].value='@admin';" title="点击移除">@admin ✕</button>
+                        <button type="submit" name="action" value="removeAdmin" class="btn btn-default btn-xs" onclick="document.getElementsByName('RemoveAdminEmployeeId')[0].value='@admin';" title="点击移除">@admin ✕</button>
                     }
                 }
             }
@@ -171,7 +163,40 @@
 </form>
 }
 
+<!-- 二次确认弹窗 -->
+<div class="modal fade" id="confirmModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="padding:10px 15px;">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h5 class="modal-title">操作确认</h5>
+            </div>
+            <div class="modal-body" style="padding:15px;" id="confirmMsg"></div>
+            <div class="modal-footer" style="padding:8px 15px;">
+                <button type="button" class="btn btn-default btn-sm" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger btn-sm" id="btnConfirmYes">确认</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+var pendingAction = '';
+function confirmAction(action, name) {
+    pendingAction = action;
+    var msg = action === 'offboard'
+        ? '<strong>确认对该用户执行离职操作？</strong><br/><small>此操作将禁用账号并修改邮箱和UPN。</small>'
+        : '<strong>确认清空所有操作记录？</strong><br/><small>此操作不可恢复。</small>';
+    document.getElementById('confirmMsg').innerHTML = msg;
+    $('#confirmModal').modal('show');
+}
+document.getElementById('btnConfirmYes').addEventListener('click', function() {
+    $('#confirmModal').modal('hide');
+    var input = document.createElement('input');
+    input.type = 'hidden'; input.name = 'action'; input.value = pendingAction;
+    document.getElementById('mainForm').appendChild(input);
+    document.getElementById('mainForm').submit();
+});
 (function() {
     var form = document.getElementById('mainForm');
 

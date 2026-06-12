@@ -200,69 +200,101 @@ public class UserAdminModel : PageModel
 
     private void SearchUser()
     {
-        if (!ValidateEmployeeId()) return;
+        if (string.IsNullOrWhiteSpace(SearchEmployeeId))
+        {
+            ErrorMessage = "请输入搜索关键字。";
+            return;
+        }
 
         try
         {
             using var context = new PrincipalContext(ContextType.Domain);
-            using var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, SearchEmployeeId);
-
-            if (user == null)
+            using var searchRoot = new DirectoryEntry($"LDAP://{context.ConnectedServer}");
+            using var searcher = new DirectorySearcher(searchRoot)
             {
-                ErrorMessage = $"未找到员工号 '{SearchEmployeeId}' 对应的用户。";
+                PageSize = 50,
+                SizeLimit = 50
+            };
+
+            var keyword = SearchEmployeeId!.Trim();
+            bool isNumeric = keyword.All(char.IsDigit);
+
+            if (isNumeric)
+                searcher.Filter = $"(|(sAMAccountName=*{keyword}*)(employeeID=*{keyword}*))";
+            else
+                searcher.Filter = $"(|(sAMAccountName=*{keyword}*)(displayName=*{keyword}*)(userPrincipalName=*{keyword}*)(givenName=*{keyword}*)(sn=*{keyword}*))";
+
+            searcher.PropertiesToLoad.AddRange(new[]
+            {
+                "sAMAccountName","displayName","employeeID","mail","userPrincipalName",
+                "userAccountControl","pwdLastSet","lastLogonTimestamp",
+                "telephoneNumber","mobile","description"
+            });
+            searcher.Sort.PropertyName = "sAMAccountName";
+
+            using var results = searcher.FindAll();
+            if (results.Count == 0)
+            {
+                ErrorMessage = $"未找到匹配 '{keyword}' 的用户。";
                 return;
             }
 
-            var entry = (DirectoryEntry)user.GetUnderlyingObject();
-
-            var lines = new List<string>
+            var allLines = new List<string>();
+            foreach (SearchResult result in results)
             {
-                $"用户名: {user.SamAccountName}",
-                $"显示名: {user.DisplayName}",
-                $"员工号: {user.EmployeeId}",
-                $"邮箱: {user.EmailAddress}",
-                $"电话: {GetProp(entry, "telephoneNumber")}",
-                $"手机: {GetProp(entry, "mobile")}",
-                $"账号启用: {(user.Enabled == true ? "是" : "否")}",
-                $"账号锁定: {(user.IsAccountLockedOut() ? "是 (已锁定)" : "否 (正常)")}",
-                $"账号过期时间: {(user.AccountExpirationDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "永不过期")}",
-                $"密码上次设置: {(user.LastPasswordSet?.ToString("yyyy-MM-dd HH:mm:ss") ?? "未知")}",
-                $"上次登录时间: {(user.LastLogon?.ToString("yyyy-MM-dd HH:mm:ss") ?? "未知")}",
-                $"密码永不过期: {(user.PasswordNeverExpires ? "是" : "否")}"
-            };
+                using var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, (string)result.Properties["sAMAccountName"][0]);
+                if (user == null) continue;
 
-            if (!user.PasswordNeverExpires && user.LastPasswordSet.HasValue)
-            {
-                var maxPwdAge = GetDomainMaxPasswordAge(context);
-                if (maxPwdAge.HasValue && maxPwdAge.Value > 0)
+                var entry = (DirectoryEntry)user.GetUnderlyingObject();
+                var lines = new List<string>
                 {
-                    var expireDate = user.LastPasswordSet.Value.AddTicks(-maxPwdAge.Value);
-                    var remaining = expireDate - DateTime.Now;
-                    if (remaining.TotalDays < 0)
-                        lines.Add($"密码已过期: {Math.Abs((int)remaining.TotalDays)} 天前已过期 ({expireDate:yyyy-MM-dd HH:mm:ss})");
-                    else
-                        lines.Add($"密码过期时间: {expireDate:yyyy-MM-dd HH:mm:ss} (剩余 {(int)remaining.TotalDays} 天)");
-                }
-            }
+                    $"用户名: {user.SamAccountName}",
+                    $"显示名: {user.DisplayName}",
+                    $"员工号: {user.EmployeeId}",
+                    $"UPN: {user.UserPrincipalName}",
+                    $"邮箱: {user.EmailAddress}",
+                    $"电话: {GetProp(entry, "telephoneNumber")}",
+                    $"手机: {GetProp(entry, "mobile")}",
+                    $"账号启用: {(user.Enabled == true ? "是" : "否")}",
+                    $"账号锁定: {(user.IsAccountLockedOut() ? "是 (已锁定)" : "否 (正常)")}",
+                    $"账号过期时间: {(user.AccountExpirationDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "永不过期")}",
+                    $"密码上次设置: {(user.LastPasswordSet?.ToString("yyyy-MM-dd HH:mm:ss") ?? "未知")}",
+                    $"上次登录时间: {(user.LastLogon?.ToString("yyyy-MM-dd HH:mm:ss") ?? "未知")}",
+                    $"密码永不过期: {(user.PasswordNeverExpires ? "是" : "否")}"
+                };
 
-            try
-            {
-                var groups = user.GetGroups().OfType<GroupPrincipal>().Select(g => g.SamAccountName).OrderBy(n => n).ToList();
-                if (groups.Count > 0)
+                if (!user.PasswordNeverExpires && user.LastPasswordSet.HasValue)
                 {
-                    lines.Add("所属组:");
-                    foreach (var g in groups)
-                        lines.Add($"  - {g}");
+                    var maxPwdAge = GetDomainMaxPasswordAge(context);
+                    if (maxPwdAge.HasValue && maxPwdAge.Value > 0)
+                    {
+                        var expireDate = user.LastPasswordSet.Value.AddTicks(-maxPwdAge.Value);
+                        var remaining = expireDate - DateTime.Now;
+                        if (remaining.TotalDays < 0)
+                            lines.Add($"密码已过期: {Math.Abs((int)remaining.TotalDays)} 天前已过期 ({expireDate:yyyy-MM-dd HH:mm:ss})");
+                        else
+                            lines.Add($"密码过期时间: {expireDate:yyyy-MM-dd HH:mm:ss} (剩余 {(int)remaining.TotalDays} 天)");
+                    }
                 }
-            }
-            catch
-            {
-                lines.Add("所属组: (无法获取)");
+
+                try
+                {
+                    var groups = user.GetGroups().OfType<GroupPrincipal>().Select(g => g.SamAccountName).OrderBy(n => n).ToList();
+                    if (groups.Count > 0)
+                    {
+                        lines.Add("所属组:");
+                        foreach (var g in groups) lines.Add($"  - {g}");
+                    }
+                }
+                catch { lines.Add("所属组: (无法获取)"); }
+
+                allLines.AddRange(lines);
+                if (results.Count > 1) allLines.Add(new string('-', 40));
             }
 
-            EmployeeName = user.DisplayName;
-            UserDetail = string.Join(Environment.NewLine, lines);
-            ResultMessage = "查询成功。";
+            EmployeeName = "";
+            UserDetail = string.Join(Environment.NewLine, allLines);
+            ResultMessage = $"查询完成，找到 {results.Count} 个用户（最多显示50个）。";
         }
         catch (Exception ex)
         {

@@ -54,18 +54,19 @@
     {
     <div class="sidebar">
         <div class="logo-area">
-            <img src="~/logo.png" alt="Logo" onerror="this.style.display='none'" />
+            <a asp-page="/Admin/UserAdmin"><img src="~/logo.png" alt="Logo" onerror="this.style.display='none'" style="border:0;" /></a>
             <h4>GARCHINA 账户管理系统</h4>
         </div>
         <div class="user-area">
             <div><span class="glyphicon glyphicon-user"></span> @displayName</div>
         </div>
         <div class="nav-area">
-            <a asp-page="/Admin/UserAdmin" class="@(currentPage.Contains("UserAdmin") ? "active" : "")"><span class="glyphicon glyphicon-search"></span> 检索账号</a>
-            <a asp-page="/Admin/Dashboard" class="@(currentPage.Contains("Dashboard") ? "active" : "")"><span class="glyphicon glyphicon-dashboard"></span> 仪表盘</a>
-            <a asp-page="/Admin/Report" class="@(currentPage.Contains("Report") ? "active" : "")"><span class="glyphicon glyphicon-list-alt"></span> 用户报表</a>
+            <a asp-page="/Admin/UserAdmin" class="@(currentPage.Contains("UserAdmin") ? "active" : "")"><span class="glyphicon glyphicon-search"></span> 账号查询管理</a>
+            <a asp-page="/Admin/Dashboard" class="@(currentPage.Contains("Dashboard") ? "active" : "")"><span class="glyphicon glyphicon-dashboard"></span> 系统仪表盘</a>
+            <a asp-page="/Admin/Report" class="@(currentPage.Contains("Report") ? "active" : "")"><span class="glyphicon glyphicon-list-alt"></span> 用户统计报表</a>
             <a asp-page="/Admin/Request" class="@(currentPage.Contains("Request") ? "active" : "")"><span class="glyphicon glyphicon-ok-circle"></span> 待创建用户</a>
             <a asp-page="/Admin/NewUser" class="@(currentPage.Contains("NewUser") ? "active" : "")"><span class="glyphicon glyphicon-plus"></span> 手动创建用户</a>
+            <a asp-page="/Admin/BatchUser" class="@(currentPage.Contains("BatchUser") ? "active" : "")"><span class="glyphicon glyphicon-th-list"></span> 批量用户管理</a>
             <a href="https://www.garchina.com/ams" target="_blank"><span class="glyphicon glyphicon-hdd"></span> 资产信息查询</a>
         </div>
         <div class="logout-area">

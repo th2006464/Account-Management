@@ -24,9 +24,21 @@ public class ReportModel : PageModel
     private static DateTime s_cacheTime = DateTime.MinValue;
     private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(12);
 
-    public void OnGet()
+    public void OnGet(int? expiry = null)
     {
         CheckAuth();
+        if (!IsAuthenticated) return;
+
+        var allOus = new List<(string Path, string Label)>
+        {
+            ("OU=hcm,OU=garchina,DC=garchina,DC=com", "HCM"),
+            ("OU=food,OU=garchina,DC=garchina,DC=com", "食品"),
+            ("OU=gar,OU=garchina,DC=garchina,DC=com", "粮油"),
+        };
+
+        if (expiry == 7) QueryPasswordExpiry(allOus, 7);
+        else if (expiry == 30) QueryPasswordExpiry(allOus, 30);
+        else if (expiry == 60) QueryPasswordExpiry(allOus, 60);
     }
 
     public IActionResult OnPost(string action)
