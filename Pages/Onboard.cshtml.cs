@@ -42,6 +42,15 @@ public class OnboardModel : PageModel
     [BindProperty]
     public string? ManagerEmail { get; set; }
 
+    [BindProperty]
+    public string? NeedVpn { get; set; } = "否";
+
+    [BindProperty]
+    public bool VpnSap { get; set; }
+
+    [BindProperty]
+    public bool VpnTpm { get; set; }
+
     public string? ResultMessage { get; set; }
     public string? ErrorMessage { get; set; }
 
@@ -94,6 +103,12 @@ public class OnboardModel : PageModel
             return Page();
         }
 
+        if (!string.IsNullOrWhiteSpace(ContactEmail) && !IsValidEmail(ContactEmail))
+        {
+            ErrorMessage = "信息回传邮箱地址格式不正确。";
+            return Page();
+        }
+
         var today = DateTime.Now.ToString("yyyyMMdd");
         var empId = EmployeeId!.Trim();
         var request = new OnboardRequest
@@ -106,7 +121,10 @@ public class OnboardModel : PageModel
             NeedEmail = NeedEmail ?? "否",
             Region = (Region ?? "").Trim(),
             ContactEmail = (ContactEmail ?? "").Trim(),
-            ManagerEmail = (ManagerEmail ?? "").Trim()
+            ManagerEmail = (ManagerEmail ?? "").Trim(),
+            NeedVpn = (NeedVpn ?? "否").Trim(),
+            VpnSap = VpnSap,
+            VpnTpm = VpnTpm
         };
 
         SaveRequest(request);
@@ -165,6 +183,19 @@ public class OnboardModel : PageModel
         catch { }
     }
 
+    private static bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email && email.Contains('@') && email.Contains('.');
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private void SendNotificationEmail(OnboardRequest req)
     {
         ServicePointManager.ServerCertificateValidationCallback = (_, _, _, _) => true;
@@ -180,6 +211,8 @@ public class OnboardModel : PageModel
             ? $"直接上级邮箱: {req.ManagerEmail}\n" : "";
         var contactInfo = !string.IsNullOrWhiteSpace(req.ContactEmail)
             ? $"回传邮箱: {req.ContactEmail}\n" : "";
+        var vpnInfo = req.NeedVpn == "是"
+            ? $"开通VPN: 是 (SAP:{(req.VpnSap ? "是" : "否")} | TPM:{(req.VpnTpm ? "是" : "否")})\n" : "开通VPN: 否\n";
 
         var body = $@"[新入职申请]
 
@@ -190,7 +223,7 @@ public class OnboardModel : PageModel
 手机号: {req.Mobile}
 所属区域: {req.Region}
 申请邮箱: {req.NeedEmail}
-{managerInfo}{contactInfo}提交时间: {req.SubmitTime}
+{managerInfo}{contactInfo}{vpnInfo}提交时间: {req.SubmitTime}
 
 请登录管理员页面进行审批：https://www.garchina.com/account/Admin/Request
 

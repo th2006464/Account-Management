@@ -10,14 +10,6 @@
     return;
 }
 
-<div class="alert alert-info" style="margin-top: 20px;">
-    <strong>创建用户</strong> — 当前登录：<strong>@Model.CurrentDisplayName</strong>
-    <span style="float: right;">
-        <a asp-page="/Admin/UserAdmin">返回管理主页</a> |
-        <a asp-page="/Admin/Login" asp-page-handler="Logout">退出登录</a>
-    </span>
-    <div style="clear: both;"></div>
-</div>
 
 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
 {
@@ -78,7 +70,6 @@
             <p style="color: #999;">暂无创建记录。</p>
         }
     </div>
-</div>
 
 @if (Model.EmailStatus != null && Model.EmailStatus.Count > 0)
 {

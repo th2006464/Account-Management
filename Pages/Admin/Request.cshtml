@@ -10,14 +10,6 @@
     return;
 }
 
-<div class="alert alert-info" style="margin-top: 20px;">
-    <strong>入职审批</strong> — 当前登录：<strong>@Model.CurrentDisplayName</strong>
-    <span style="float: right;">
-        <a asp-page="/Admin/UserAdmin">返回管理主页</a> |
-        <a asp-page="/Admin/Login" asp-page-handler="Logout">退出登录</a>
-    </span>
-    <div style="clear: both;"></div>
-</div>
 
 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
 {
@@ -50,13 +42,14 @@
                                 {<span>回传邮箱: @req.ContactEmail<br /></span>}
                                 @if (!string.IsNullOrEmpty(req.ManagerEmail))
                                 {<span>上级邮箱: @req.ManagerEmail<br /></span>}
+                                VPN: @req.NeedVpn @if (req.VpnSap) {<span>| SAP</span>} @if (req.VpnTpm) {<span>| TPM</span>}<br />
                                 <small style="color: #999;">申请编号: @req.Id | 提交时间: @req.SubmitTime</small>
                             </div>
                             <div style="display: flex; gap: 10px; align-items: center;">
                                 <form method="post" style="display: inline;">
                                     <button type="submit" name="action" value="approve_@req.Id" class="btn btn-success">批准创建</button>
                                     <button type="submit" name="action" value="reject_@req.Id" class="btn btn-danger" onclick="return confirm('确认取消该申请？');">取消申请</button>
-                                    <button type="button" class="btn btn-default" onclick="openEdit('@req.Id','@req.CnName','@req.EnName','@req.EmployeeId','@req.Mobile','@req.NeedEmail','@req.Region','@req.ContactEmail','@req.ManagerEmail')">编辑信息</button>
+                                    <button type="button" class="btn btn-default" onclick="openEdit('@req.Id','@req.CnName','@req.EnName','@req.EmployeeId','@req.Mobile','@req.NeedEmail','@req.Region','@req.ContactEmail','@req.ManagerEmail','@req.NeedVpn','@req.VpnSap','@req.VpnTpm')">编辑信息</button>
                                 </form>
                             </div>
                         </div>
@@ -65,7 +58,6 @@
             }
         }
     </div>
-</div>
 
 @if (Model.ProcessedRequests.Count > 0)
 {
@@ -109,6 +101,9 @@
     <input type="hidden" name="editRegion" id="editRegionHidden" />
     <input type="hidden" name="editContactEmail" id="editContactEmailHidden" />
     <input type="hidden" name="editManagerEmail" id="editManagerEmailHidden" />
+    <input type="hidden" name="editNeedVpn" id="editNeedVpnHidden" />
+    <input type="hidden" name="editVpnSap" id="editVpnSapHidden" />
+    <input type="hidden" name="editVpnTpm" id="editVpnTpmHidden" />
 </form>
 
 <!-- 编辑信息弹窗 -->
@@ -129,6 +124,9 @@
                 <div class="form-group"><label>员工所属区域</label><input class="form-control" id="editRegion" /></div>
                 <div class="form-group"><label>信息回传邮箱地址</label><input class="form-control" id="editContactEmail" /></div>
                 <div class="form-group"><label>直接上级邮箱地址</label><input class="form-control" id="editManagerEmail" /></div>
+                <div class="form-group"><label>是否开通VPN</label><select class="form-control" id="editNeedVpn"><option>否</option><option>是</option></select></div>
+                <div class="form-group"><label><input type="checkbox" id="editVpnSap" value="true" /> SAP</label></div>
+                <div class="form-group"><label><input type="checkbox" id="editVpnTpm" value="true" /> TPM</label></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
@@ -136,10 +134,9 @@
             </div>
         </div>
     </div>
-</div>
 
 <script>
-function openEdit(id, cn, en, emp, mob, ne, reg, ce, me) {
+function openEdit(id, cn, en, emp, mob, ne, reg, ce, me, nv, vs, vt) {
     document.getElementById('editId').value = id;
     document.getElementById('editCnName').value = cn;
     document.getElementById('editEnName').value = en;
@@ -149,6 +146,9 @@ function openEdit(id, cn, en, emp, mob, ne, reg, ce, me) {
     document.getElementById('editRegion').value = reg;
     document.getElementById('editContactEmail').value = ce || '';
     document.getElementById('editManagerEmail').value = me || '';
+    document.getElementById('editNeedVpn').value = nv || '否';
+    document.getElementById('editVpnSap').checked = vs === 'True';
+    document.getElementById('editVpnTpm').checked = vt === 'True';
     $('#editModal').modal('show');
 }
 document.getElementById('btnSaveEdit').addEventListener('click', function() {
@@ -161,6 +161,9 @@ document.getElementById('btnSaveEdit').addEventListener('click', function() {
     document.getElementById('editRegionHidden').value = document.getElementById('editRegion').value;
     document.getElementById('editContactEmailHidden').value = document.getElementById('editContactEmail').value;
     document.getElementById('editManagerEmailHidden').value = document.getElementById('editManagerEmail').value;
+    document.getElementById('editNeedVpnHidden').value = document.getElementById('editNeedVpn').value;
+    document.getElementById('editVpnSapHidden').value = document.getElementById('editVpnSap').checked;
+    document.getElementById('editVpnTpmHidden').value = document.getElementById('editVpnTpm').checked;
     document.getElementById('editForm').submit();
 });
 </script>

@@ -1,43 +1,83 @@
-# AD 用户密码管理页面
+# GARCHINA 账户管理系统
 
-这是一个针对 Windows Server 2022 + IIS 的简单 ASP.NET Core Razor Pages 应用，用于：
+企业级 Active Directory 账户管理平台，支持用户自助改密、管理员批量操作、入职审批流程、可视化仪表盘。
 
-- 查询域用户账号状态
-- 重置用户密码
+## 技术栈
 
-## 运行方式
+- **.NET 8** + **ASP.NET Core Razor Pages** + **Bootstrap 3**
+- **System.DirectoryServices.AccountManagement**（AD 操作）
+- **Windows Server + IIS** 部署，**Kestrel** 开发调试
+- **NetUserSetInfo API** 触发 PCNSSVC 多域密码同步
+- **AES-256** 加密保护敏感日志文件
 
-1. 在服务器上打开 PowerShell，导航到项目目录：
-   ```powershell
-   cd d:\VScode\iis改密码
-   dotnet run --urls http://localhost:5000
-   ```
-2. 在浏览器中访问 `http://localhost:5000`
-3. 也可以使用 IIS 部署该应用，注意：
-   - 应用池身份需要为域用户或有足够权限的服务账号
-   - 该账号必须有访问 Active Directory 的权限
+## 功能模块
+
+### 用户自助
+- 域密码修改（当前密码验证 → 强度校验 → PCNS 同步通知）
+- 入职申请提交（多字段表单 + 邮件通知管理员）
+
+### 管理员控制台
+- 用户检索、密码重置、一键离职、批量解锁、加用户组
+- 创建 AD 用户（自动生成密码、发送邮件）
+- 入职审批流程（提交 → 审批通过自动创建账号 → 邮件通知用户）
+- 管理员授权管理（超级管理员保护）
+
+### 可视化仪表盘
+- 用户总数/启用/禁用/锁定/待审批 实时卡片
+- OU 用户分布进度条
+- 7 日密码更新趋势
+- 最近 30 日入职统计
+- 今日操作 + 密码到期预警
+
+### 用户报表
+- 按 OU 查询用户列表（动态列宽对齐）
+- 密码到期查询（7/30/60 天）
+- CSV 导出
+- 统计图表
+
+### 安全
+- Session 认证 + 管理员白名单
+- 所有 App_Data 文件 AES-256 加密存储
+- 审计日志（密码重置、离职、解锁、登录等全记录）
+- 未登录自动跳转登录页，登录后返回原页面
+
+## 本地运行
+
+```powershell
+cd D:\VScode\iis改密码
+dotnet run
+```
+双击 `AccountManagement.exe` 自动打开浏览器访问 `http://localhost:5000`。
 
 ## 部署到 Windows Server + IIS
 
-1. 在开发机或服务器上执行发布：
-   ```powershell
-   cd d:\VScode\iis改密码
-   dotnet publish -c Release -o .\publish
-   ```
-2. 在 Windows Server 上安装 IIS，并确保已启用“ASP.NET Core 模块”。
-3. 在 IIS 管理器中创建新的站点：
-   - 物理路径指向 `d:\VScode\iis改密码\publish`
-   - 绑定到所需的主机名和端口
-4. 将应用池身份设置为一个有权限访问 Active Directory 的域账号，或者使用具有 AD 权限的服务账号。
-5. 打开浏览器访问该站点地址，例如 `http://your-server-name/`。
+1. 服务器安装 .NET 8 Hosting Bundle 和 IIS
+2. 将 `bin/Publish/` 目录复制到服务器
+3. IIS 创建站点指向该目录，应用池选择"无托管代码"
+4. 应用池标识设为有 AD 权限的域账号（推荐 NetworkService）
+5. 部署时**保留 `App_Data/` 文件夹**不动，避免日志丢失
 
-## 主要文件
+## 项目结构
 
-- `Pages/Index.cshtml`：页面 UI
-- `Pages/Index.cshtml.cs`：查询账号状态与密码重置逻辑
-
-## 注意事项
-
-- 用户名请使用 `sAMAccountName` 格式
-- 密码重置功能需要域管理员权限或具备密码重置权限的账号
-- 如果出现权限错误，请检查 IIS 应用池身份是否为域账号，并确保该账户有 AD 访问权限
+```
+├── Helpers/
+│   ├── PasswordHelper.cs      # NetUserSetInfo P/Invoke
+│   └── FileProtection.cs      # AES 加密文件读写
+├── Models/
+│   └── OnboardRequest.cs      # 入职申请数据模型
+├── Pages/
+│   ├── Index.cshtml           # 用户自助改密主页
+│   ├── Onboard.cshtml         # 入职申请页面
+│   └── Admin/
+│       ├── Login.cshtml       # 管理员登录
+│       ├── UserAdmin.cshtml   # 管理员控制台
+│       ├── Dashboard.cshtml   # 可视化仪表盘
+│       ├── Report.cshtml      # 用户报表
+│       ├── Request.cshtml     # 入职审批
+│       ├── NewUser.cshtml     # 创建用户
+│       ├── AdminLog.cshtml    # 操作日志（加密存储）
+│       └── SinarmasUser.cshtml # 跨域用户查询
+├── wwwroot/                   # 静态资源
+├── appsettings.json           # 配置文件
+└── Program.cs                 # 应用入口
+```

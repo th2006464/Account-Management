@@ -11,6 +11,9 @@ public class OnboardRequest
     public string Region { get; set; } = "";
     public string ContactEmail { get; set; } = "";
     public string ManagerEmail { get; set; } = "";
+    public string NeedVpn { get; set; } = "否";
+    public bool VpnSap { get; set; }
+    public bool VpnTpm { get; set; }
     public string SubmitTime { get; set; } = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
     public string? Status { get; set; } // null=pending, "approved", "rejected"
     public string? ReviewedBy { get; set; }

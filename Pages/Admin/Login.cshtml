@@ -1,6 +1,7 @@
 @page "/Admin/Login"
 @model AccountManagement.Pages.Admin.LoginModel
 @{
+    Layout = "_Layout";
     ViewData["Title"] = "管理员登录";
 }
 
@@ -14,6 +15,7 @@
                     <div class="alert alert-danger">@Model.ErrorMessage</div>
                 }
                 <form method="post">
+                    <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
                     <div class="form-group">
                         <label for="EmployeeId">员工号</label>
                         <input class="form-control" id="EmployeeId" name="EmployeeId" autocomplete="off" />

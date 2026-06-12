@@ -129,6 +129,7 @@ public class UserAdminModel : PageModel
             else if (!string.IsNullOrWhiteSpace(AddAdminEmployeeId) && AddAdminEmployeeId.Length == 8 && AddAdminEmployeeId.All(char.IsDigit))
             {
                 LoginModel.AddAdmin(AddAdminEmployeeId);
+                WriteAuditLog($"管理员授权 | 操作人: {CurrentEmployeeId} | 添加管理员: {AddAdminEmployeeId}");
                 ResultMessage = $"已添加管理员: {AddAdminEmployeeId}";
             }
             else
@@ -148,6 +149,7 @@ public class UserAdminModel : PageModel
             else if (!string.IsNullOrWhiteSpace(RemoveAdminEmployeeId))
             {
                 LoginModel.RemoveAdmin(RemoveAdminEmployeeId);
+                WriteAuditLog($"管理员授权 | 操作人: {CurrentEmployeeId} | 移除管理员: {RemoveAdminEmployeeId}");
                 ResultMessage = $"已移除管理员: {RemoveAdminEmployeeId}";
             }
         }

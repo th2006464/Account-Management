@@ -17,10 +17,14 @@ public class LoginModel : PageModel
     [BindProperty]
     public string? Password { get; set; }
 
+    [BindProperty]
+    public string? ReturnUrl { get; set; }
+
     public string? ErrorMessage { get; set; }
 
-    public void OnGet()
+    public void OnGet(string? returnUrl = null)
     {
+        ReturnUrl = returnUrl;
     }
 
     public IActionResult OnGetLogout()
@@ -62,6 +66,9 @@ public class LoginModel : PageModel
             HttpContext.Session.SetString("AdminDisplayName", displayName);
 
             WriteLoginLog(EmployeeId);
+
+            if (!string.IsNullOrEmpty(ReturnUrl))
+                return LocalRedirect(ReturnUrl);
 
             return RedirectToPage("/Admin/UserAdmin");
         }

@@ -1,0 +1,122 @@
+@page "/Admin/Dashboard"
+@model AccountManagement.Pages.Admin.DashboardModel
+@{
+    ViewData["Title"] = "仪表盘";
+}
+
+@if (!Model.IsAuthenticated)
+{
+    <div class="alert alert-danger" style="margin-top: 20px;">请先<a asp-page="/Admin/Login">登录</a>。</div>
+    return;
+}
+
+@* 总览卡片 *@
+<div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+    @{ var cardStyle = "flex: 1; min-width: 130px; text-align: center; margin-bottom: 0;"; }
+    @{ var bodyStyle = "padding: 14px 10px;"; }
+    <div class="panel panel-primary" style="@cardStyle"><div class="panel-body" style="@bodyStyle"><h3 style="margin:0;color:#337ab7;">@Model.TotalUsers</h3><small style="color:#666;">用户总数</small></div></div>
+    <div class="panel panel-success" style="@cardStyle"><div class="panel-body" style="@bodyStyle"><h3 style="margin:0;color:#5cb85c;">@Model.EnabledUsers</h3><small style="color:#666;">启用用户</small></div></div>
+    <div class="panel panel-danger" style="@cardStyle"><div class="panel-body" style="@bodyStyle"><h3 style="margin:0;color:#d9534f;">@Model.DisabledUsers</h3><small style="color:#666;">禁用用户</small></div></div>
+    <div class="panel panel-warning" style="@cardStyle"><div class="panel-body" style="@bodyStyle"><h3 style="margin:0;color:#f0ad4e;">@Model.LockedUsers</h3><small style="color:#666;">锁定用户</small></div></div>
+    <div class="panel panel-info" style="@cardStyle"><div class="panel-body" style="@bodyStyle"><h3 style="margin:0;color:#5bc0de;">@Model.PendingRequests</h3><small style="color:#666;">待审批</small></div></div>
+</div>
+
+@* 今日操作 + 密码到期 *@
+<div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+    <div class="panel panel-default" style="flex: 1; min-width: 260px;">
+        <div class="panel-heading"><strong>今日操作</strong></div>
+        <div class="panel-body" style="padding: 10px 8px;">
+            <div style="display: flex; gap: 8px;">
+                <div style="flex:1;text-align:center;border-right:1px solid #eee;"><h4 style="margin:0;color:#5cb85c;">@Model.TodayResets</h4><small style="color:#999;">密码重置</small></div>
+                <div style="flex:1;text-align:center;border-right:1px solid #eee;"><h4 style="margin:0;color:#d9534f;">@Model.TodayOffboards</h4><small style="color:#999;">离职处理</small></div>
+                <div style="flex:1;text-align:center;"><h4 style="margin:0;color:#337ab7;">@Model.TodayCreates</h4><small style="color:#999;">创建用户</small></div>
+            </div>
+        </div>
+    </div>
+    <div class="panel panel-default" style="flex: 1; min-width: 260px;">
+        <div class="panel-heading"><strong>密码到期预警</strong></div>
+        <div class="panel-body" style="padding: 10px 8px;">
+            <div style="display: flex; gap: 8px;">
+                <div style="flex:1;text-align:center;border-right:1px solid #eee;"><h4 style="margin:0;color:#d9534f;">@Model.Expire7Days</h4><small style="color:#999;">7天内</small></div>
+                <div style="flex:1;text-align:center;border-right:1px solid #eee;"><h4 style="margin:0;color:#f0ad4e;">@Model.Expire30Days</h4><small style="color:#999;">30天内</small></div>
+                <div style="flex:1;text-align:center;"><h4 style="margin:0;color:#337ab7;">@Model.Expire60Days</h4><small style="color:#999;">60天内</small></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* OU分布 + 7日趋势 *@
+<div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+    <div class="panel panel-default" style="flex: 1; min-width: 300px;">
+        <div class="panel-heading"><strong>OU 用户分布</strong></div>
+        <div class="panel-body">
+            @foreach (var os in Model.OuStats)
+            {
+                <div style="margin-bottom: 10px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><strong>@os.Label</strong><span>@os.Total 人 (@os.Percentage.ToString("F1")%)</span></div>
+                    <div class="progress" style="margin-bottom:0;height:20px;"><div class="progress-bar" style="width:@os.Percentage.ToString("F0")%;min-width:30px;line-height:20px;">@os.Total 人</div></div>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="panel panel-default" style="flex: 1; min-width: 300px;">
+        <div class="panel-heading"><strong>&#128338; 7日密码更新人数</strong></div>
+        <div class="panel-body">
+            @if (Model.WeeklyTrends.Count > 0)
+            {
+                int maxVal = Model.WeeklyTrends.Max(t => t.Resets);
+                if (maxVal == 0) { maxVal = 1; }
+                <table style="width:100%;font-size:12px;">
+                    @foreach (var t in Model.WeeklyTrends)
+                    {
+                        <tr><td style="width:40px;">@t.Date</td><td style="width:100%;padding:1px 4px;"><div class="progress" style="margin:0;height:18px;background:#eee;">
+                            <div class="progress-bar progress-bar-success" style="width:@(100.0*t.Resets/maxVal)%;min-width:20px;line-height:18px;">@t.Resets 人</div>
+                        </div></td></tr>
+                    }
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+@* 系统信息 + 快速入口 *@
+<div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+    <div class="panel panel-default" style="flex: 1; min-width: 240px;">
+        <div class="panel-heading"><strong>&#9881; 系统信息</strong></div>
+        <div class="panel-body" style="padding: 10px 15px;">
+            <table style="width:100%;font-size:13px;">
+                <tr><td style="padding:3px 0;color:#666;">管理员数量</td><td style="text-align:right;"><strong>@Model.TotalAdmins</strong> 人</td></tr>
+                <tr><td style="padding:3px 0;color:#666;">入职申请总数</td><td style="text-align:right;"><strong>@Model.TotalOnboardRequests</strong> 条</td></tr>
+                <tr><td style="padding:3px 0;color:#666;">禁用用户占比</td><td style="text-align:right;"><strong>@(Model.TotalUsers > 0 ? (100.0 * Model.OuDisabledUsers / Model.TotalUsers).ToString("F1") : "0")%</strong></td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="panel panel-default" style="flex: 1; min-width: 240px;">
+        <div class="panel-heading"><strong>&#128200; 最近30日入职人数</strong></div>
+        <div class="panel-body" style="padding: 10px 15px;">
+            <h2 style="margin:0 0 8px;color:#337ab7;">@Model.Recent30NewUsers <small style="font-size:14px;color:#999;">人</small></h2>
+            @foreach (var os in Model.NewUserByOu)
+            {
+                <div style="margin-bottom:6px;">
+                    <div style="display:flex;justify-content:space-between;font-size:13px;"><span>@os.Label</span><span>@os.Total 人</span></div>
+                    <div class="progress" style="margin:2px 0 0;height:16px;"><div class="progress-bar progress-bar-info" style="width:@os.Percentage.ToString("F0")%;min-width:20px;line-height:16px;">@os.Total</div></div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@* 最近操作 *@
+<div class="panel panel-default" style="margin-top: 12px;">
+    <div class="panel-heading"><strong>最近操作</strong></div>
+    <div class="panel-body">
+        @if (Model.RecentLogs.Count > 0)
+        {
+            <pre style="max-height:200px;overflow-y:auto;font-size:12px;margin-bottom:0;">@string.Join(Environment.NewLine, Model.RecentLogs)</pre>
+        }
+        else
+        {
+            <p style="color:#999;">暂无操作记录。</p>
+        }
+    </div>
+</div>

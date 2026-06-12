@@ -31,4 +31,15 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 
+// 本地运行时自动打开浏览器
+if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_HOSTINGSTARTUPASSEMBLIES")))
+{
+    app.Lifetime.ApplicationStarted.Register(() =>
+    {
+        var url = (app.Urls.FirstOrDefault() ?? "http://localhost:5000").Replace("0.0.0.0", "localhost");
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); }
+        catch { }
+    });
+}
+
 app.Run();
