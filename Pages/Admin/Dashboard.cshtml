@@ -21,11 +21,11 @@ else
 <div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
     @{ var cardStyle = "flex: 1; min-width: 130px; text-align: center; margin-bottom: 0;"; }
     @{ var bodyStyle = "padding: 14px 10px;"; }
-    <div class="panel panel-primary" style="@cardStyle"><div class="panel-body" style="@bodyStyle"><h3 style="margin:0;color:#337ab7;">@Model.TotalUsers</h3><small style="color:#666;">用户总数</small></div></div>
-    <div class="panel panel-success" style="@cardStyle"><div class="panel-body" style="@bodyStyle"><h3 style="margin:0;color:#5cb85c;">@Model.EnabledUsers</h3><small style="color:#666;">启用用户</small></div></div>
-    <div class="panel panel-danger" style="@cardStyle"><div class="panel-body" style="@bodyStyle"><h3 style="margin:0;color:#d9534f;">@Model.DisabledUsers</h3><small style="color:#666;">禁用用户</small></div></div>
-    <div class="panel panel-warning" style="@cardStyle"><div class="panel-body" style="@bodyStyle"><h3 style="margin:0;color:#f0ad4e;">@Model.LockedUsers</h3><small style="color:#666;">锁定用户</small></div></div>
-    <div class="panel panel-info" style="@cardStyle"><div class="panel-body" style="@bodyStyle"><h3 style="margin:0;color:#5bc0de;">@Model.PendingRequests</h3><small style="color:#666;">待审批</small></div></div>
+    <a asp-page="/Admin/Report" style="text-decoration:none;"><div class="panel panel-primary" style="@cardStyle"><div class="panel-body" style="@bodyStyle"><h3 style="margin:0;color:#337ab7;">@Model.TotalUsers</h3><small style="color:#666;">用户总数</small></div></div></a>
+    <a asp-page="/Admin/Report" style="text-decoration:none;"><div class="panel panel-success" style="@cardStyle"><div class="panel-body" style="@bodyStyle"><h3 style="margin:0;color:#5cb85c;">@Model.EnabledUsers</h3><small style="color:#666;">启用用户</small></div></div></a>
+    <a asp-page="/Admin/Report" style="text-decoration:none;"><div class="panel panel-danger" style="@cardStyle"><div class="panel-body" style="@bodyStyle"><h3 style="margin:0;color:#d9534f;">@Model.DisabledUsers</h3><small style="color:#666;">禁用用户</small></div></div></a>
+    <a asp-page="/Admin/UserAdmin" style="text-decoration:none;"><div class="panel panel-warning" style="@cardStyle"><div class="panel-body" style="@bodyStyle"><h3 style="margin:0;color:#f0ad4e;">@Model.LockedUsers</h3><small style="color:#666;">锁定用户</small></div></div></a>
+    <a asp-page="/Admin/Request" style="text-decoration:none;"><div class="panel panel-info" style="@cardStyle"><div class="panel-body" style="@bodyStyle"><h3 style="margin:0;color:#5bc0de;">@Model.PendingRequests</h3><small style="color:#666;">待处理</small></div></div></a>
 </div>
 
 @* 今日操作 + 密码到期 *@
@@ -44,9 +44,9 @@ else
         <div class="panel-heading"><strong>密码到期预警</strong></div>
         <div class="panel-body" style="padding: 10px 8px;">
             <div style="display: flex; gap: 8px;">
-                <div style="flex:1;text-align:center;border-right:1px solid #eee;"><h4 style="margin:0;color:#d9534f;">@Model.Expire7Days</h4><small style="color:#999;">7天内</small></div>
-                <div style="flex:1;text-align:center;border-right:1px solid #eee;"><h4 style="margin:0;color:#f0ad4e;">@Model.Expire30Days</h4><small style="color:#999;">30天内</small></div>
-                <div style="flex:1;text-align:center;"><h4 style="margin:0;color:#337ab7;">@Model.Expire60Days</h4><small style="color:#999;">60天内</small></div>
+                <a asp-page="/Admin/Report" style="flex:1;text-align:center;border-right:1px solid #eee;text-decoration:none;display:block;"><h4 style="margin:0;color:#d9534f;">@Model.Expire7Days</h4><small style="color:#999;">7天内</small></a>
+                <a asp-page="/Admin/Report" style="flex:1;text-align:center;border-right:1px solid #eee;text-decoration:none;display:block;"><h4 style="margin:0;color:#f0ad4e;">@Model.Expire30Days</h4><small style="color:#999;">30天内</small></a>
+                <a asp-page="/Admin/Report" style="flex:1;text-align:center;text-decoration:none;display:block;"><h4 style="margin:0;color:#337ab7;">@Model.Expire60Days</h4><small style="color:#999;">60天内</small></a>
             </div>
         </div>
     </div>

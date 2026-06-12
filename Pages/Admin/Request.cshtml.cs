@@ -173,7 +173,7 @@ public class RequestModel : PageModel
             pwdUser.CommitChanges();
 
             OnboardModel.UpdateRequest(requestId, "approved", CurrentEmployeeId!, password);
-            WriteAuditLog($"入职审批-批准 | 操作人: {CurrentEmployeeId} | {req.CnName}({enName}) | 员工号: {req.EmployeeId}");
+            WriteAuditLog($"入职处理-已创建 | 操作人: {CurrentEmployeeId} | {req.CnName}({enName}) | 员工号: {req.EmployeeId}");
 
             // 异步发邮件
             var en = enName;
@@ -189,7 +189,7 @@ public class RequestModel : PageModel
                 catch (Exception ex) { _logger.LogError(ex, "入职邮件发送失败"); }
             });
 
-            ResultMessage = $"已批准: {req.CnName}({enName})，密码已生成。";
+            ResultMessage = $"已创建: {req.CnName}({enName})，密码已生成。";
         }
         catch (Exception ex)
         {
@@ -205,8 +205,8 @@ public class RequestModel : PageModel
         if (req == null) { ErrorMessage = "未找到该申请。"; return; }
 
         OnboardModel.UpdateRequest(requestId, "rejected", CurrentEmployeeId!);
-        WriteAuditLog($"入职审批-取消 | 操作人: {CurrentEmployeeId} | {req.CnName}({req.EnName}) | 员工号: {req.EmployeeId}");
-        ResultMessage = $"已取消: {req.CnName}({req.EnName}) 的入职申请。";
+        WriteAuditLog($"入职处理-已处理 | 操作人: {CurrentEmployeeId} | {req.CnName}({req.EnName}) | 员工号: {req.EmployeeId}");
+        ResultMessage = $"已处理: {req.CnName}({req.EnName}) 的入职申请。";
     }
 
     private static string GenerateRandomPassword()

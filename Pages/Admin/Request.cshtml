@@ -1,7 +1,7 @@
 @page "/Admin/Request"
 @model AccountManagement.Pages.Admin.RequestModel
 @{
-    ViewData["Title"] = "入职审批";
+    ViewData["Title"] = "待创建用户";
 }
 
 @if (!Model.IsAuthenticated)
@@ -21,11 +21,11 @@
 }
 
 <div class="panel panel-warning" style="margin-top: 20px;">
-    <div class="panel-heading"><strong>待审批申请</strong> <span class="badge">@Model.PendingRequests.Count</span></div>
+    <div class="panel-heading"><strong>待处理工单</strong> <span class="badge">@Model.PendingRequests.Count</span></div>
     <div class="panel-body">
         @if (Model.PendingRequests.Count == 0)
         {
-            <p style="color: #999;">暂无待审批的入职申请。</p>
+            <p style="color: #999;">暂无待处理的入职申请。</p>
         }
         else
         {
@@ -47,8 +47,8 @@
                             </div>
                             <div style="display: flex; gap: 10px; align-items: center;">
                                 <form method="post" style="display: inline;">
-                                    <button type="submit" name="action" value="approve_@req.Id" class="btn btn-success">批准创建</button>
-                                    <button type="submit" name="action" value="reject_@req.Id" class="btn btn-danger" onclick="return confirm('确认取消该申请？');">取消申请</button>
+                                    <button type="submit" name="action" value="approve_@req.Id" class="btn btn-success">创建用户</button>
+                                    <button type="submit" name="action" value="reject_@req.Id" class="btn btn-danger" onclick="return confirm('确认标记为已处理？');">标记已处理</button>
                                     <button type="button" class="btn btn-default" onclick="openEdit('@req.Id','@req.CnName','@req.EnName','@req.EmployeeId','@req.Mobile','@req.NeedEmail','@req.Region','@req.ContactEmail','@req.ManagerEmail','@req.NeedVpn','@req.VpnSap','@req.VpnTpm')">编辑信息</button>
                                 </form>
                             </div>
@@ -78,7 +78,7 @@
                             <td>@req.EnName</td>
                             <td>@req.EmployeeId</td>
                             <td>@req.Region</td>
-                            <td>@(req.Status == "approved" ? "已批准" : "已取消")</td>
+                            <td>@(req.Status == "approved" ? "已创建" : "已处理")</td>
                             <td>@req.ReviewedBy</td>
                             <td>@req.ReviewTime</td>
                             <td>@(req.NewPassword ?? "-")</td>

@@ -76,7 +76,6 @@ dotnet run
 │       ├── Request.cshtml     # 入职审批
 │       ├── NewUser.cshtml     # 创建用户
 │       ├── AdminLog.cshtml    # 操作日志（加密存储）
-│       └── SinarmasUser.cshtml # 跨域用户查询
 ├── wwwroot/                   # 静态资源
 ├── appsettings.json           # 配置文件
 └── Program.cs                 # 应用入口
