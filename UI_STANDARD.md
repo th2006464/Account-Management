@@ -19,6 +19,46 @@ Admin 页面 = _AdminLayout（侧边栏）+ 消息区 + 查询面板 + 操作面
 
 ---
 
+## 远端框架（CDN 引入）
+
+所有 CSS/JS 框架通过百度 CDN（`apps.bdimg.com`）远程加载，无需 npm 安装，无需本地托管。
+
+### 依赖清单
+
+| 资源 | 版本 | CDN 地址 |
+|------|------|---------|
+| Bootstrap CSS | 3.3.4 | `https://apps.bdimg.com/libs/bootstrap/3.3.4/css/bootstrap.min.css` |
+| jQuery | 2.1.4 | `https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js` |
+| Bootstrap JS | 3.3.4 | `https://apps.bdimg.com/libs/bootstrap/3.3.4/js/bootstrap.min.js` |
+
+### 加载位置
+
+所有远端资源在 Layout 文件中统一引入，**子页面无需重复引用**：
+
+```
+_Layout.cshtml        → 公开页面布局，引入全部 3 个 CDN 资源
+_AdminLayout.cshtml   → Admin 管理布局，引入全部 3 个 CDN 资源 + 自定义侧边栏样式
+```
+
+```html
+<!-- _AdminLayout.cshtml / _Layout.cshtml 的 <head> -->
+<link rel="stylesheet" href="https://apps.bdimg.com/libs/bootstrap/3.3.4/css/bootstrap.min.css" />
+<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+<!-- </body> 之前 -->
+<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="https://apps.bdimg.com/libs/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+```
+
+### 使用说明
+
+- **Bootstrap 3.x 组件可直接使用**：Grid 栅格、Panel 面板、Alert 警告框、Modal 弹窗、Badge 徽标、Glyphicon 图标
+- **Glyphicon 图标**：Bootstrap 3 内置，用法 `<span class="glyphicon glyphicon-search"></span>`
+- **jQuery**：Bootstrap JS 插件依赖，所有自定义脚本在 jQuery 之后加载
+- **不引入额外 CSS/JS 库**，保持最小依赖
+
+---
+
 ## 1. Admin 布局骨架（_AdminLayout）
 
 所有 admin 页面自动使用侧边栏布局，无需每个页面重复声明：
