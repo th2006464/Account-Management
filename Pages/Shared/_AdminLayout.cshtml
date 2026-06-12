@@ -69,7 +69,8 @@
             <a asp-page="/Admin/BatchUser" class="@(currentPage.Contains("BatchUser") ? "active" : "")"><span class="glyphicon glyphicon-th-list"></span> 批量用户管理</a>
             <a href="https://www.garchina.com/ams" target="_blank"><span class="glyphicon glyphicon-hdd"></span> 资产信息查询</a>
         </div>
-        <div class="logout-area">
+        <div class="logout-area" style="display:flex;justify-content:space-between;">
+            <a asp-page="/Admin/Config"><span class="glyphicon glyphicon-cog"></span></a>
             <a asp-page="/Admin/Login" asp-page-handler="Logout"><span class="glyphicon glyphicon-log-out"></span> 退出登录</a>
         </div>
     </div>

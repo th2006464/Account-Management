@@ -1,0 +1,37 @@
+@page "/Admin/Config"
+@model AccountManagement.Pages.Admin.ConfigModel
+@{
+    ViewData["Title"] = "配置管理";
+}
+
+@if (!Model.IsAuthenticated)
+{
+    <div class="alert alert-danger">请先<a asp-page="/Admin/Login">登录</a>。</div>
+    return;
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+@if (!string.IsNullOrEmpty(Model.ResultMessage))
+{
+    <div class="alert alert-success">@Model.ResultMessage</div>
+}
+
+<div class="panel panel-default" style="margin-top:8px;">
+    <div class="panel-heading" style="padding:6px 12px;"><strong>配置管理</strong></div>
+    <div class="panel-body" style="padding:12px;">
+        <form method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>更新左上角 Logo</label>
+                <div style="margin-bottom:8px;">
+                    <img src="~/logo.png?t=@DateTime.Now.Ticks" alt="当前Logo" style="max-width:200px;max-height:80px;border:1px solid #ddd;padding:4px;" onerror="this.style.display='none'" />
+                </div>
+                <input type="file" name="logoFile" accept="image/*" class="form-control" style="max-width:400px;" />
+                <small style="color:#999;">支持 PNG/JPG/GIF，最大 2MB</small>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">上传更新</button>
+        </form>
+    </div>
+</div>
