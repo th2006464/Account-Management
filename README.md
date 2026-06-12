@@ -86,7 +86,7 @@
 ## 本地运行
 
 ```powershell
-cd D:\VScode\iis改密码
+cd D:\VScode\AccountManagement
 dotnet run
 ```
 双击 `AccountManagement.exe` 自动打开浏览器访问 `http://localhost:5000`。

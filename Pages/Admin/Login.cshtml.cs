@@ -1,5 +1,7 @@
 using AccountManagement.Helpers;
 using System.DirectoryServices.AccountManagement;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -10,6 +12,9 @@ public class LoginModel : PageModel
 {
     private static readonly object s_lock = new();
     private static string AdminFile => Path.Combine(AppContext.BaseDirectory, "App_Data", "admins.dat");
+    private const string CookieName = "AdminAutoLogin";
+    private const int CookieDays = 7;
+    private static readonly byte[] s_cookieKey = SHA256.HashData(Encoding.UTF8.GetBytes("GARCHINA@2026_AutoLoginSecretKey"));
 
     [BindProperty]
     public string? EmployeeId { get; set; }
@@ -20,16 +25,42 @@ public class LoginModel : PageModel
     [BindProperty]
     public string? ReturnUrl { get; set; }
 
+    [BindProperty]
+    public bool RememberMe { get; set; }
+
     public string? ErrorMessage { get; set; }
 
-    public void OnGet(string? returnUrl = null)
+    public IActionResult OnGet(string? returnUrl = null)
     {
         ReturnUrl = returnUrl;
+
+        // 自动登录检查
+        if (TryAutoLogin(out var empId))
+        {
+            HttpContext.Session.SetString("AdminLoggedIn", "true");
+            HttpContext.Session.SetString("AdminEmployeeId", empId);
+
+            using var ctx = new PrincipalContext(ContextType.Domain);
+            using var user = UserPrincipal.FindByIdentity(ctx, IdentityType.SamAccountName, empId);
+            var dn = empId;
+            if (user != null && !string.IsNullOrEmpty(user.DisplayName))
+                dn = $"{empId} | {user.DisplayName}";
+            HttpContext.Session.SetString("AdminDisplayName", dn);
+
+            WriteLoginLog(empId);
+
+            if (!string.IsNullOrEmpty(returnUrl))
+                return LocalRedirect(returnUrl);
+            return RedirectToPage("/Admin/UserAdmin");
+        }
+
+        return Page();
     }
 
     public IActionResult OnGetLogout()
     {
         HttpContext.Session.Clear();
+        HttpContext.Response.Cookies.Delete(CookieName);
         return RedirectToPage("/Admin/Login");
     }
 
@@ -65,6 +96,10 @@ public class LoginModel : PageModel
             HttpContext.Session.SetString("AdminEmployeeId", EmployeeId);
             HttpContext.Session.SetString("AdminDisplayName", displayName);
 
+            // 记住登录
+            if (RememberMe)
+                SetAutoLoginCookie(EmployeeId);
+
             WriteLoginLog(EmployeeId);
 
             if (!string.IsNullOrEmpty(ReturnUrl))
@@ -92,6 +127,50 @@ public class LoginModel : PageModel
             }
         }
         catch { }
+    }
+
+    // ---- 自动登录 Cookie ----
+
+    private void SetAutoLoginCookie(string employeeId)
+    {
+        var expiry = DateTime.UtcNow.AddDays(CookieDays).Ticks.ToString();
+        var payload = $"{employeeId}|{expiry}";
+        var signature = Convert.ToBase64String(HMACSHA256.HashData(s_cookieKey, Encoding.UTF8.GetBytes(payload)));
+        var cookieValue = $"{employeeId}|{expiry}|{signature}";
+
+        HttpContext.Response.Cookies.Append(CookieName, cookieValue, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
+            Expires = DateTimeOffset.UtcNow.AddDays(CookieDays)
+        });
+    }
+
+    private bool TryAutoLogin(out string employeeId)
+    {
+        employeeId = "";
+        var cookie = HttpContext.Request.Cookies[CookieName];
+        if (string.IsNullOrEmpty(cookie)) return false;
+
+        var parts = cookie.Split('|');
+        if (parts.Length != 3) return false;
+
+        var empId = parts[0];
+        var expStr = parts[1];
+        var sig = parts[2];
+
+        if (!long.TryParse(expStr, out var expiryTicks)) return false;
+        if (DateTime.UtcNow.Ticks > expiryTicks) return false;
+
+        var payload = $"{empId}|{expStr}";
+        var expectedSig = Convert.ToBase64String(HMACSHA256.HashData(s_cookieKey, Encoding.UTF8.GetBytes(payload)));
+        if (sig != expectedSig) return false;
+
+        if (!IsAdmin(empId)) return false;
+
+        employeeId = empId;
+        return true;
     }
 
     // ---- 管理员列表管理（无缓存，每次读文件） ----

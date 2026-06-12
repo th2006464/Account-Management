@@ -12,7 +12,9 @@
       "Bash(git commit *)",
       "Bash(gh repo *)",
       "Bash(git push *)",
-      "Bash(dotnet restore *)"
+      "Bash(dotnet restore *)",
+      "Bash(mv \"iis改密码\" \"AccountManagement.bak\")",
+      "Bash(mv \"AccountManagement.bak\" \"AccountManagement\")"
     ],
     "additionalDirectories": [
       "d:\\VScode\\Account Management"
