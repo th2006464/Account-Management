@@ -10,6 +10,13 @@ public class ConfigModel : PageModel
     public string? CurrentDisplayName { get; set; }
     public string? ResultMessage { get; set; }
     public string? ErrorMessage { get; set; }
+    public List<string>? AdminList { get; set; }
+
+    [BindProperty]
+    public string? AddAdminId { get; set; }
+
+    [BindProperty]
+    public string? RemoveAdminId { get; set; }
 
     private static string LogoPath => Path.Combine(AppContext.BaseDirectory, "wwwroot", "logo.png");
 
@@ -17,13 +24,43 @@ public class ConfigModel : PageModel
     {
         CheckAuth();
         if (!IsAuthenticated) return;
+        AdminList = LoginModel.LoadAdminList();
     }
 
-    public async Task<IActionResult> OnPost(IFormFile? logoFile)
+    public async Task<IActionResult> OnPost(string? action, IFormFile? logoFile)
     {
         CheckAuth();
         if (!IsAuthenticated) return RedirectToPage("/Admin/Login");
+        AdminList = LoginModel.LoadAdminList();
 
+        // 管理员操作
+        if (action == "addAdmin" && CurrentEmployeeId == "15005035")
+        {
+            if (!string.IsNullOrWhiteSpace(AddAdminId) && AddAdminId.Length == 8 && AddAdminId.All(char.IsDigit))
+            {
+                LoginModel.AddAdmin(AddAdminId);
+                ResultMessage = $"已添加管理员: {AddAdminId}";
+                AdminList = LoginModel.LoadAdminList();
+            }
+            else
+                ErrorMessage = "员工号格式不正确。";
+            return Page();
+        }
+
+        if (action == "removeAdmin" && CurrentEmployeeId == "15005035")
+        {
+            if (RemoveAdminId == "15005035")
+                ErrorMessage = "不能移除超级管理员。";
+            else if (!string.IsNullOrWhiteSpace(RemoveAdminId))
+            {
+                LoginModel.RemoveAdmin(RemoveAdminId);
+                ResultMessage = $"已移除管理员: {RemoveAdminId}";
+                AdminList = LoginModel.LoadAdminList();
+            }
+            return Page();
+        }
+
+        // Logo 上传
         if (CurrentEmployeeId != "15005035")
         {
             ErrorMessage = "仅超级管理员可操作。";

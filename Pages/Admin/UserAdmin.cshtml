@@ -130,38 +130,6 @@
     </div>
 </div>
 
-@if (Model.CurrentEmployeeId == "15005035")
-{
-<form method="post">
-<div class="panel panel-default" style="margin-top:8px;">
-    <div class="panel-heading" style="padding:6px 12px;"><strong>管理员授权</strong></div>
-    <div class="panel-body" style="padding:8px 12px;">
-        <div style="display:flex;gap:8px;margin-bottom:8px;">
-            <input class="form-control" name="AddAdminEmployeeId" maxlength="8" placeholder="输入8位员工号" style="flex:1;" autocomplete="off" />
-            <button type="submit" name="action" value="addAdmin" class="btn btn-success btn-sm">添加管理员</button>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;">
-            <span style="line-height:1.8;margin-right:6px;font-size:12px;">当前管理员：</span>
-            @if (Model.AdminList != null)
-            {
-                foreach (var admin in Model.AdminList)
-                {
-                    if (admin == "15005035")
-                    {
-                        <span class="btn btn-default btn-xs" style="pointer-events:none;opacity:0.7;">@admin</span>
-                    }
-                    else
-                    {
-                        <button type="submit" name="action" value="removeAdmin" class="btn btn-default btn-xs" onclick="document.getElementsByName('RemoveAdminEmployeeId')[0].value='@admin';" title="点击移除">@admin ✕</button>
-                    }
-                }
-            }
-        </div>
-        <input type="hidden" name="RemoveAdminEmployeeId" value="" />
-    </div>
-</div>
-</form>
-}
 
 <!-- 二次确认弹窗 -->
 <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog">
