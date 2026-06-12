@@ -10,6 +10,18 @@
 - **NetUserSetInfo API** 触发 PCNSSVC 多域密码同步
 - **AES-256** 加密保护敏感日志文件
 
+### 部署位置说明
+
+**不需要部署在 AD 域控服务器上**，只要部署在**已加入域**的任意 Windows Server 或 Windows 电脑即可。
+
+域控发现机制：代码中使用 `new PrincipalContext(ContextType.Domain)` 不加任何 IP 地址，系统通过 DNS SRV 记录自动发现域控：
+
+1. 查询 `_ldap._tcp.garchina.com` 获取域内所有 DC 列表
+2. 优先选择同一 Active Directory 站点（子网）的 DC
+3. 自动故障转移：当前 DC 不可用时切换下一个
+
+所有操作走 Windows 集成身份验证（应用池标识），域控升级或 IP 变更无需改代码。
+
 ## 功能模块
 
 ### 用户自助
@@ -82,10 +94,14 @@ dotnet run
 ## 部署到 Windows Server + IIS
 
 1. 服务器安装 .NET 8 Hosting Bundle 和 IIS
-2. 将 `bin/Publish/` 目录复制到服务器
-3. IIS 创建站点指向该目录，应用池选择"无托管代码"
-4. 应用池标识设为有 AD 权限的域账号（推荐 NetworkService）
-5. 部署时**保留 `App_Data/` 文件夹**不动，避免日志丢失
+2. 将 `bin/Publish/` 目录复制到服务器（如 `D:\WebApps\AccountManagement\`）
+3. IIS 中**创建独立的应用程序池**（名称如 `AccountManagement`），避免与其他站点冲突
+4. 应用程序池设置：
+   - .NET CLR 版本：**"无托管代码"**
+   - 标识：设为有 AD 权限的域账号，推荐使用 **NetworkService**（以计算机账号 `DOMAIN\SERVERNAME$` 访问 AD）
+5. IIS 创建站点/应用程序，指向部署目录，绑定到新建的应用池
+6. 部署时**保留 `App_Data/` 文件夹**不动，避免日志丢失
+7. 替换 DLL 后务必执行 `iisreset` 或回收应用池
 
 ## 项目结构
 
