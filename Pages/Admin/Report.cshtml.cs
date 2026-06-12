@@ -19,19 +19,14 @@ public class ReportModel : PageModel
     private static string? s_csvData;
     private static string? s_csvFileName;
 
+    // 缓存机制：12小时有效
+    private static List<UserRecord>? s_cache;
+    private static DateTime s_cacheTime = DateTime.MinValue;
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(12);
+
     public void OnGet()
     {
         CheckAuth();
-        if (!IsAuthenticated) return;
-
-        if (TempData["ReportResults"] is string rr)
-            ReportResults = new List<string>(rr.Split('\n'));
-        if (TempData["ChartData"] is string cd)
-            ChartData = new List<string>(cd.Split('\n'));
-        if (TempData["ResultMessage"] is string rm)
-            ResultMessage = rm;
-        if (TempData["ErrorMessage"] is string em)
-            ErrorMessage = em;
     }
 
     public IActionResult OnPost(string action)
@@ -69,14 +64,8 @@ public class ReportModel : PageModel
             QueryPasswordExpiry(allOus, 60);
         else if (action == "queryPwdChanged7")
             QueryPasswordChanged(allOus, 7);
-        else
-            return Page();
 
-        TempData["ReportResults"] = ReportResults != null ? string.Join("\n", ReportResults) : null;
-        TempData["ChartData"] = ChartData != null ? string.Join("\n", ChartData) : null;
-        TempData["ResultMessage"] = ResultMessage;
-        TempData["ErrorMessage"] = ErrorMessage;
-        return RedirectToPage();
+        return Page();
     }
 
     private void CheckAuth()
@@ -90,32 +79,50 @@ public class ReportModel : PageModel
         }
     }
 
+    private const int MaxResults = 3000;
+
+    private List<UserRecord> GetCachedUsers()
+    {
+        if (s_cache != null && DateTime.Now - s_cacheTime < CacheDuration)
+            return s_cache;
+
+        var allOus = new List<(string Path, string Label)>
+        {
+            ("OU=hcm,OU=garchina,DC=garchina,DC=com", "HCM"),
+            ("OU=food,OU=garchina,DC=garchina,DC=com", "食品"),
+            ("OU=gar,OU=garchina,DC=garchina,DC=com", "粮油"),
+        };
+
+        s_cache = new List<UserRecord>();
+        foreach (var (ouPath, ouLabel) in allOus)
+        {
+            try
+            {
+                var users = QuerySingleOU(ouPath, ouLabel, 10000);
+                s_cache.AddRange(users);
+            }
+            catch { }
+        }
+        s_cacheTime = DateTime.Now;
+        return s_cache;
+    }
+
     private void QueryOUs(List<(string Path, string Label)> ous)
     {
         ReportResults = new List<string>();
         ChartData = new List<string>();
-        var allUsers = new List<UserRecord>();
-        int grandTotal = 0;
 
-        foreach (var (ouPath, ouLabel) in ous)
-        {
-            try
-            {
-                var users = QuerySingleOU(ouPath, ouLabel);
-                allUsers.AddRange(users);
-                grandTotal += users.Count;
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"查询 {ouLabel} 失败：{ex.Message}";
-            }
-        }
+        var allCached = GetCachedUsers();
+        var ouLabels = new HashSet<string>(ous.Select(o => o.Label));
+        var allUsers = allCached.Where(u => ouLabels.Contains(u.OuLabel)).ToList();
 
         if (allUsers.Count == 0)
         {
             ReportResults.Add("未查询到用户。");
             return;
         }
+
+        var grandTotal = allUsers.Count;
 
         // 动态计算列宽（状态放在最左侧）
         int wStatus = Math.Max(4, allUsers.Max(u => u.Enabled.Length));
@@ -176,65 +183,28 @@ public class ReportModel : PageModel
     private void QueryPasswordExpiry(List<(string Path, string Label)> ous, int withinDays)
     {
         const int maxPwdAge = 90;
-        var allUsers = new List<UserRecord>();
         var now = DateTime.Now;
+        var ouLabels = new HashSet<string>(ous.Select(o => o.Label));
+        var allCached = GetCachedUsers().Where(u => ouLabels.Contains(u.OuLabel) && u.Enabled == "启用").ToList();
+        var allUsers = new List<UserRecord>();
 
-        foreach (var (ouPath, ouLabel) in ous)
+        foreach (var u in allCached)
         {
-            try
+            if (string.IsNullOrEmpty(u.PwdLastSetRaw) || u.PwdLastSetRaw == "0") continue;
+            if (!long.TryParse(u.PwdLastSetRaw, out var ticks) || ticks <= 0) continue;
+
+            var pwdSetDate = DateTime.FromFileTimeUtc(ticks);
+            var daysSinceSet = (now - pwdSetDate).TotalDays;
+            var daysRemaining = maxPwdAge - daysSinceSet;
+
+            if (daysRemaining > 0 && daysRemaining <= withinDays)
             {
-                using var searchRoot = new DirectoryEntry($"LDAP://{ouPath}");
-                using var searcher = new DirectorySearcher(searchRoot)
-                {
-                    Filter = "(&(objectCategory=person)(objectClass=user)(!userAccountControl:1.2.840.113556.1.4.803:=65536))",
-                    SearchScope = SearchScope.Subtree,
-                    PageSize = 1000
-                };
-
-                searcher.PropertiesToLoad.AddRange(new[]
-                {
-                    "sAMAccountName", "displayName", "employeeID", "mail",
-                    "userAccountControl", "pwdLastSet"
-                });
-
-                foreach (SearchResult result in searcher.FindAll())
-                {
-                    var uac = GetProp(result, "userAccountControl");
-                    var enabled = uac != "-" && (int.Parse(uac) & 2) == 0;
-
-                    if (!result.Properties.Contains("pwdLastSet") || result.Properties["pwdLastSet"].Count == 0)
-                        continue;
-                    var pwdRaw = result.Properties["pwdLastSet"][0];
-                    if (pwdRaw is not long pwdLastSetTicks || pwdLastSetTicks <= 0) continue;
-                    {
-                        var pwdSetDate = DateTime.FromFileTimeUtc(pwdLastSetTicks);
-                        var daysSinceSet = (now - pwdSetDate).TotalDays;
-                        var daysRemaining = maxPwdAge - daysSinceSet;
-
-                        if (daysRemaining > 0 && daysRemaining <= withinDays)
-                        {
-                            allUsers.Add(new UserRecord
-                            {
-                                SamAccountName = GetProp(result, "sAMAccountName"),
-                                DisplayName = GetProp(result, "displayName"),
-                                EmployeeId = GetProp(result, "employeeID"),
-                                Mail = GetProp(result, "mail"),
-                                Enabled = enabled ? "启用" : "禁用",
-                                OuLabel = ouLabel,
-                                PwdDaysRemaining = (int)daysRemaining,
-                                PwdLastSet = pwdSetDate.ToString("yyyy-MM-dd")
-                            });
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"查询 {ouLabel} 失败：{ex.Message}";
+                u.PwdDaysRemaining = (int)daysRemaining;
+                u.PwdLastSet = pwdSetDate.ToString("yyyy-MM-dd");
+                allUsers.Add(u);
             }
         }
 
-        // 按剩余天数排序
         allUsers = allUsers.OrderBy(u => u.PwdDaysRemaining).ToList();
 
         ReportResults = new List<string>();
@@ -312,55 +282,22 @@ public class ReportModel : PageModel
 
     private void QueryPasswordChanged(List<(string Path, string Label)> ous, int withinDays)
     {
-        var allUsers = new List<UserRecord>();
         var now = DateTime.Now;
         var cutoff = now.AddDays(-withinDays);
+        var ouLabels = new HashSet<string>(ous.Select(o => o.Label));
+        var allCached = GetCachedUsers().Where(u => ouLabels.Contains(u.OuLabel)).ToList();
+        var allUsers = new List<UserRecord>();
 
-        foreach (var (ouPath, ouLabel) in ous)
+        foreach (var u in allCached)
         {
-            try
-            {
-                using var searchRoot = new DirectoryEntry($"LDAP://{ouPath}");
-                using var searcher = new DirectorySearcher(searchRoot)
-                {
-                    Filter = "(&(objectCategory=person)(objectClass=user)(pwdLastSet>=1))",
-                    SearchScope = SearchScope.Subtree,
-                    PageSize = 1000
-                };
+            if (string.IsNullOrEmpty(u.PwdLastSetRaw) || u.PwdLastSetRaw == "0") continue;
+            if (!long.TryParse(u.PwdLastSetRaw, out var ticks) || ticks <= 0) continue;
 
-                searcher.PropertiesToLoad.AddRange(new[]
-                {
-                    "sAMAccountName", "displayName", "employeeID", "mail",
-                    "userAccountControl", "pwdLastSet"
-                });
+            var pwdDate = DateTime.FromFileTimeUtc(ticks);
+            if (pwdDate < cutoff) continue;
 
-                foreach (SearchResult result in searcher.FindAll())
-                {
-                    if (!result.Properties.Contains("pwdLastSet") || result.Properties["pwdLastSet"].Count == 0)
-                        continue;
-                    if (result.Properties["pwdLastSet"][0] is not long pwdTicks || pwdTicks <= 0)
-                        continue;
-
-                    var pwdDate = DateTime.FromFileTimeUtc(pwdTicks);
-                    if (pwdDate < cutoff) continue;
-
-                    var uac = GetProp(result, "userAccountControl");
-                    allUsers.Add(new UserRecord
-                    {
-                        SamAccountName = GetProp(result, "sAMAccountName"),
-                        DisplayName = GetProp(result, "displayName"),
-                        EmployeeId = GetProp(result, "employeeID"),
-                        Mail = GetProp(result, "mail"),
-                        Enabled = uac != "-" && (int.Parse(uac) & 2) == 0 ? "启用" : "禁用",
-                        OuLabel = ouLabel,
-                        PwdLastSet = pwdDate.ToString("yyyy-MM-dd")
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"查询 {ouLabel} 失败：{ex.Message}";
-            }
+            u.PwdLastSet = pwdDate.ToString("yyyy-MM-dd");
+            allUsers.Add(u);
         }
 
         allUsers = allUsers.OrderByDescending(u => u.PwdLastSet).ToList();
@@ -426,7 +363,7 @@ public class ReportModel : PageModel
         ResultMessage = $"查询完成，最近 {withinDays} 天共 {allUsers.Count} 个用户更新密码。";
     }
 
-    private List<UserRecord> QuerySingleOU(string ouPath, string ouLabel)
+    private List<UserRecord> QuerySingleOU(string ouPath, string ouLabel, int maxResults = MaxResults)
     {
         var users = new List<UserRecord>();
         using var searchRoot = new DirectoryEntry($"LDAP://{ouPath}");
@@ -434,7 +371,8 @@ public class ReportModel : PageModel
         {
             Filter = "(&(objectCategory=person)(objectClass=user))",
             SearchScope = SearchScope.Subtree,
-            PageSize = 1000
+            PageSize = 1000,
+            SizeLimit = maxResults
         };
 
         searcher.PropertiesToLoad.AddRange(new[]
@@ -449,6 +387,8 @@ public class ReportModel : PageModel
         {
             var uac = GetProp(result, "userAccountControl");
             var pwdLastSet = GetProp(result, "pwdLastSet");
+            var pwdRaw = result.Properties.Contains("pwdLastSet") && result.Properties["pwdLastSet"].Count > 0
+                ? result.Properties["pwdLastSet"][0]?.ToString() ?? "" : "";
             users.Add(new UserRecord
             {
                 SamAccountName = GetProp(result, "sAMAccountName"),
@@ -457,7 +397,8 @@ public class ReportModel : PageModel
                 Mail = GetProp(result, "mail"),
                 Enabled = uac != "-" && (int.Parse(uac) & 2) == 0 ? "启用" : "禁用",
                 OuLabel = ouLabel,
-                PwdLastSet = pwdLastSet
+                PwdLastSet = pwdLastSet,
+                PwdLastSetRaw = pwdRaw
             });
         }
 
@@ -488,5 +429,6 @@ public class ReportModel : PageModel
         public string OuLabel { get; set; } = "";
         public int PwdDaysRemaining { get; set; }
         public string PwdLastSet { get; set; } = "";
+        public string PwdLastSetRaw { get; set; } = "";
     }
 }

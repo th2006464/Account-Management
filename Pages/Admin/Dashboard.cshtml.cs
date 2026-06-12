@@ -44,13 +44,24 @@ public class DashboardModel : PageModel
     public int OuDisabledUsers { get; set; }
     public int Recent30NewUsers { get; set; }
     public List<OuStat> NewUserByOu { get; set; } = new();
+    public int Recent30Resets { get; set; }
+    public int Recent30SelfResets { get; set; }
+
+    public string? DashboardError { get; set; }
 
     public void OnGet()
     {
         CheckAuth();
         if (!IsAuthenticated) return;
 
-        LoadDashboardData();
+        try
+        {
+            LoadDashboardData();
+        }
+        catch (Exception ex)
+        {
+            DashboardError = "仪表盘数据加载失败：" + ex.Message;
+        }
     }
 
     private void CheckAuth()
@@ -229,6 +240,21 @@ public class DashboardModel : PageModel
         }
         foreach (var os in NewUserByOu)
             os.Percentage = Recent30NewUsers > 0 ? (double)os.Total / Recent30NewUsers * 100 : 0;
+
+        // 30日统计
+        var cutoff30 = now.AddDays(-30).ToString("yyyy-MM-dd");
+        var auditPath = Path.Combine(AppContext.BaseDirectory, "App_Data", "audit.dat");
+        if (System.IO.File.Exists(auditPath))
+        {
+            var allLines = Helpers.FileProtection.ReadAllText(auditPath).Split('\n');
+            foreach (var line in allLines)
+            {
+                if (line.Length < 10) continue;
+                if (string.Compare(line[..10], cutoff30) < 0) continue;
+                if (line.Contains("| 密码重置 |")) Recent30Resets++;
+                else if (line.Contains("| 密码更新 |")) Recent30SelfResets++;
+            }
+        }
 
         LastRestart = DateTime.Now.AddHours(-Environment.TickCount64 / 3600000.0);
     }

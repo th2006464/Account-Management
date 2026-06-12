@@ -10,6 +10,13 @@
     return;
 }
 
+@if (!string.IsNullOrEmpty(Model.DashboardError))
+{
+    <div class="alert alert-danger">@Model.DashboardError</div>
+}
+else
+{
+
 @* 总览卡片 *@
 <div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
     @{ var cardStyle = "flex: 1; min-width: 130px; text-align: center; margin-bottom: 0;"; }
@@ -82,12 +89,13 @@
 @* 系统信息 + 快速入口 *@
 <div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
     <div class="panel panel-default" style="flex: 1; min-width: 240px;">
-        <div class="panel-heading"><strong>&#9881; 系统信息</strong></div>
+        <div class="panel-heading"><strong>&#128202; 运营数据</strong></div>
         <div class="panel-body" style="padding: 10px 15px;">
             <table style="width:100%;font-size:13px;">
-                <tr><td style="padding:3px 0;color:#666;">管理员数量</td><td style="text-align:right;"><strong>@Model.TotalAdmins</strong> 人</td></tr>
-                <tr><td style="padding:3px 0;color:#666;">入职申请总数</td><td style="text-align:right;"><strong>@Model.TotalOnboardRequests</strong> 条</td></tr>
-                <tr><td style="padding:3px 0;color:#666;">禁用用户占比</td><td style="text-align:right;"><strong>@(Model.TotalUsers > 0 ? (100.0 * Model.OuDisabledUsers / Model.TotalUsers).ToString("F1") : "0")%</strong></td></tr>
+                <tr><td style="padding:4px 0;color:#666;">30天密码重置（管理员）</td><td style="text-align:right;"><strong>@Model.Recent30Resets</strong> 次</td></tr>
+                <tr><td style="padding:4px 0;color:#666;">30天密码修改（自助）</td><td style="text-align:right;"><strong>@Model.Recent30SelfResets</strong> 次</td></tr>
+                <tr><td style="padding:4px 0;color:#666;">入职申请总数</td><td style="text-align:right;"><strong>@Model.TotalOnboardRequests</strong> 条</td></tr>
+                <tr><td style="padding:4px 0;color:#666;">禁用用户占比</td><td style="text-align:right;"><strong>@(Model.TotalUsers > 0 ? (100.0 * Model.OuDisabledUsers / Model.TotalUsers).ToString("F1") : "0")%</strong></td></tr>
             </table>
         </div>
     </div>
@@ -106,17 +114,4 @@
     </div>
 </div>
 
-@* 最近操作 *@
-<div class="panel panel-default" style="margin-top: 12px;">
-    <div class="panel-heading"><strong>最近操作</strong></div>
-    <div class="panel-body">
-        @if (Model.RecentLogs.Count > 0)
-        {
-            <pre style="max-height:200px;overflow-y:auto;font-size:12px;margin-bottom:0;">@string.Join(Environment.NewLine, Model.RecentLogs)</pre>
-        }
-        else
-        {
-            <p style="color:#999;">暂无操作记录。</p>
-        }
-    </div>
-</div>
+}
