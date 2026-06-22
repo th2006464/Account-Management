@@ -99,7 +99,14 @@
             </div>
         </div>
     </div>
-    <script>(function(){ $(function(){ $('#successModal').modal('show'); }); })();</script>
+}
+
+@* 成功弹窗的脚本放在Scripts section中，确保在jQuery加载后执行 *@
+@section Scripts {
+    @if (!Model.IsQueryResult && !string.IsNullOrEmpty(Model.ResultMessage))
+    {
+        <script>(function(){ $(function(){ $('#successModal').modal('show'); }); })();</script>
+    }
 }
 
 <!-- 确认弹窗 -->
