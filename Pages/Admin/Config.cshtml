@@ -73,7 +73,6 @@
     <div class="panel-heading" style="padding:6px 12px;"><strong>邮箱通知配置</strong></div>
     <div class="panel-body" style="padding:8px 12px;">
         <form method="post">
-            <input type="hidden" name="action" value="saveEmailConfig" id="emailAction" />
             <input type="hidden" name="testType" id="testType" value="" />
 
             @* SMTP 设置 *@
@@ -146,7 +145,7 @@
                 </table>
             </fieldset>
 
-            <button type="submit" class="btn btn-success btn-sm">保存邮箱配置</button>
+            <button type="submit" name="action" value="saveEmailConfig" class="btn btn-success btn-sm">保存邮箱配置</button>
         </form>
     </div>
 </div>
