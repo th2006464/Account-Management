@@ -294,9 +294,12 @@ _AdminLayout.cshtml   → Admin 管理布局，引入全部 3 个 CDN 资源 + �
 </div>
 ```
 
-配套 JavaScript：
+配套 JavaScript（**使用隐藏 submit 按钮，禁止 `form.submit()`**）：
 
 ```javascript
+// 表单内放一个隐藏submit按钮
+// <button type="submit" name="action" value="confirmAction" id="hiddenSubmitBtn" style="display:none;"></button>
+
 var pendingAction = '';
 function confirmAction(action, name) {
     pendingAction = action;
@@ -308,21 +311,65 @@ function confirmAction(action, name) {
 }
 document.getElementById('btnConfirmYes').addEventListener('click', function() {
     $('#confirmModal').modal('hide');
-    var input = document.createElement('input');
-    input.type = 'hidden'; input.name = 'action'; input.value = pendingAction;
-    document.getElementById('mainForm').appendChild(input);
-    document.getElementById('mainForm').submit();
+    // 设置隐藏按钮的值并触发原生click，走浏览器标准提交流程
+    var btn = document.getElementById('hiddenSubmitBtn');
+    btn.value = pendingAction;
+    btn.click();
 });
 ```
 
 **规范：**
 - `modal-sm` 小尺寸弹窗
 - 确认按钮放右侧，取消放左侧
-- 通过动态创建 `<input type="hidden">` 传递操作类型，而非直接提交
+- **必须使用隐藏 submit 按钮的 `.click()` 提交**，禁止直接调用 `form.submit()`
+- 原因：`form.submit()` 在用户交互回调中可能触发 submit 事件，与防重复提交的 `submitting` 锁冲突导致提交被拦截
 
 ---
 
-## 9. 附加操作弹窗（如加用户组）
+## 9. 成功结果弹窗（操作完成后自动弹出）
+
+关键操作（密码修改等）完成后用 Modal 弹窗展示结果，**不要用页面底部 alert**，用户容易忽略。
+
+```html
+@* 成功结果弹窗 — 只有非查询类操作成功时渲染 *@
+@if (!Model.IsQueryResult && !string.IsNullOrEmpty(Model.ResultMessage))
+{
+    <div class="modal fade" id="successModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background:#5cb85c;color:#fff;border-radius:5px 5px 0 0;">
+                    <button type="button" class="close" data-dismiss="modal" style="color:#fff;opacity:0.8;">&times;</button>
+                    <h4 class="modal-title">&#10004; 操作成功</h4>
+                </div>
+                <div class="modal-body" style="font-size:14px;line-height:1.8;">
+                    <pre style="white-space:pre-line;background:none;border:none;padding:0;margin:0;font-size:14px;">@Model.ResultMessage</pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success btn-lg" data-dismiss="modal" style="width:100%;">我已记录，关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* 弹窗脚本必须在 Scripts section 中（jQuery 之后执行） *@
+@section Scripts {
+    @if (!Model.IsQueryResult && !string.IsNullOrEmpty(Model.ResultMessage))
+    {
+        <script>(function(){ $(function(){ $('#successModal').modal('show'); }); })();</script>
+    }
+}
+```
+
+**规范：**
+- 绿色标题栏 `background:#5cb85c`，区别于确认弹窗的默认灰色
+- 全宽关闭按钮 `style="width:100%"`
+- 内容用 `<pre style="white-space:pre-line;">` 保留换行
+- **弹窗自动显示脚本必须放在 `@section Scripts` 中**（参见 11.4 节）
+
+---
+
+## 10. 附加操作弹窗（如加用户组）
 
 需要额外输入的操作，单独弹窗收集参数：
 
@@ -356,9 +403,46 @@ document.getElementById('btnConfirmYes').addEventListener('click', function() {
 
 ---
 
-## 10. JavaScript 规范
+## 11. JavaScript 规范
 
-### 10.1 防止重复提交
+### 11.1 `@section Scripts` — jQuery 代码必须放这里
+
+**关键事实：** `_Layout.cshtml` 和 `_AdminLayout.cshtml` 中 jQuery 在 `@RenderBody()` **之后** 加载：
+
+```
+页面渲染顺序：
+  @RenderBody()           ← 页面内容 + 内联 <script> 先执行
+  <script src="jquery">   ← jQuery 在这之后才可用
+  @RenderSection("Scripts") ← 这里 $ 已经可用
+```
+
+因此**所有使用 `$`（jQuery）的脚本必须放在 `@section Scripts` 中**：
+
+```html
+<!-- ✅ 正确 — 在 Scripts section 中，jQuery 已加载 -->
+@section Scripts {
+    <script>
+    (function() {
+        $(function() {
+            $('#successModal').modal('show');
+        });
+    })();
+    </script>
+}
+
+<!-- ❌ 错误 — 在页面中内联，jQuery 还未加载，$ 报 ReferenceError -->
+<script>
+(function() {
+    $(function() {   // ← $ is not defined!
+        $('#successModal').modal('show');
+    });
+})();
+</script>
+```
+
+**例外：** 原生 DOM 操作（`document.getElementById`、`addEventListener`）可以内联；仅 `$` 或 Bootstrap 插件（`.modal()`）需要放 Scripts section。
+
+### 11.2 防止重复提交
 
 ```javascript
 var submitting = false;
@@ -379,7 +463,7 @@ form.addEventListener('submit', function(e) {
 });
 ```
 
-### 10.2 Enter 键触发搜索
+### 11.3 Enter 键触发搜索
 
 ```javascript
 form.addEventListener('keydown', function(e) {
@@ -390,7 +474,25 @@ form.addEventListener('keydown', function(e) {
 });
 ```
 
-### 10.3 所有 JS 用 IIFE 包裹
+### 11.4 Modal 确认提交 — 用隐藏 submit 按钮，禁止 `form.submit()`
+
+`form.submit()` 在用户交互回调中会意外触发 submit 事件，与防重复提交锁冲突。**统一用隐藏 submit 按钮 `.click()`**：
+
+```html
+<!-- 表单内放隐藏按钮 -->
+<button type="submit" name="action" value="update" id="hiddenUpdateBtn" style="display:none;"></button>
+```
+
+```javascript
+// Modal 确认按钮 → 触发隐藏按钮的原生 click
+btnConfirm.addEventListener('click', function() {
+    $('#confirmModal').modal('hide');
+    document.getElementById('hiddenUpdateBtn').click(); // ✅ 浏览器标准提交流程
+    // form.submit(); ← ❌ 禁止！
+});
+```
+
+### 11.5 所有 JS 用 IIFE 包裹
 
 ```javascript
 (function() {
@@ -403,7 +505,7 @@ form.addEventListener('keydown', function(e) {
 
 ---
 
-## 11. 公开页面布局（_Layout，无侧边栏）
+## 12. 公开页面布局（_Layout，无侧边栏）
 
 公开页面（如 Index、Onboard）使用 `_Layout`，顶部有绿色信息栏：
 
@@ -423,7 +525,7 @@ form.addEventListener('keydown', function(e) {
 
 ---
 
-## 12. 注意事项面板（仅公开页面）
+## 13. 注意事项面板（仅公开页面）
 
 黄色警告框，展示使用说明：
 
@@ -441,7 +543,7 @@ form.addEventListener('keydown', function(e) {
 
 ---
 
-## 13. 页脚（仅公开页面）
+## 14. 页脚（仅公开页面）
 
 ```html
 <footer class="border-top footer text-muted">
@@ -453,17 +555,20 @@ form.addEventListener('keydown', function(e) {
 
 ---
 
-## 14. 新建页面快速参考
+## 15. 新建页面快速参考
 
 | 页面类型 | 参考模板 | 布局 |
 |---------|---------|------|
 | Admin 管理页面 | [Pages/Admin/UserAdmin.cshtml](Pages/Admin/UserAdmin.cshtml) | _AdminLayout（侧边栏） |
-| 公开页面 | Pages/Index.cshtml | _Layout（无侧边栏） |
-| 仪表盘 | Pages/Admin/Dashboard.cshtml | _AdminLayout |
-| 弹窗确认 | UserAdmin.cshtml 中的 confirmModal | Bootstrap Modal |
+| 公开页面 | [Pages/Index.cshtml](Pages/Index.cshtml) | _Layout（无侧边栏） |
+| 仪表盘 | [Pages/Admin/Dashboard.cshtml](Pages/Admin/Dashboard.cshtml) | _AdminLayout |
+| 弹窗确认 | Index.cshtml 中的 confirmModal | Bootstrap Modal |
+| 成功结果弹窗 | Index.cshtml 中的 successModal | Bootstrap Modal + Scripts section |
 
 **新建 admin 页面步骤：**
 1. 在 `Pages/Admin/` 下创建 `.cshtml` + `.cshtml.cs`
 2. CSHTML 照搬 UserAdmin.cshtml 的结构：消息区 → 查询面板 → 操作面板 → 结果面板(N) → 日志面板 → Modal
 3. 无需声明 Layout，`_ViewStart.cshtml` 中按路径自动匹配 `_AdminLayout`
 4. 后端使用 PRG 模式（Post-Redirect-Get）
+
+**⚠️ 关键规则：所有使用 jQuery（`$`）的脚本必须放在 `@section Scripts` 中**，因为 jQuery 在 Layout 的 `@RenderBody()` 之后才加载。原生 DOM 脚本可以内联。
