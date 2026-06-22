@@ -56,6 +56,131 @@ public static class EmailSender
         }
     }
 
+    /// <summary>
+    /// 发送测试邮件 — 使用指定的 SMTP 参数和收件地址，模板内容为测试占位数据
+    /// </summary>
+    public static void SendTest(string notifyType, string toAddress, string smtpServer, int smtpPort,
+        string fromAddress, string username, string password)
+    {
+        var config = new EmailConfigData
+        {
+            SmtpServer = smtpServer,
+            SmtpPort = smtpPort,
+            FromAddress = fromAddress,
+            Username = username,
+            Password = password
+        };
+
+        string subject;
+        string body;
+
+        switch (notifyType)
+        {
+            case "SelfPasswordChange":
+                body = $@"尊敬的用户，
+
+您的 GARCHINA 账号 12345678 密码已更新。
+新密码为：Test@2025Pwd
+
+此密码适用于：
+- GARCHINA 系统认证
+- China OA 系统
+- GARCHINA VPN
+- Workday 请休假系统
+
+（此为测试邮件，请忽略具体内容。）
+
+如有问题，请联系中国区 IT 部门：
+邮箱：CN_IT_Support@sinarmas-agri.com
+
+此邮件由系统自动发送，请勿回复。";
+                subject = "[测试] 用户AD账号密码更新通知";
+                break;
+
+            case "AdminPasswordReset":
+                body = $@"尊敬的用户，
+
+您的 GARCHINA 账号 12345678 的密码已重置。
+新密码为：Test@2025Pwd
+
+（此为测试邮件，由管理员从Config页面触发。）
+
+此邮件由系统自动发送，请勿回复。";
+                subject = "[测试] 用户AD 账号密码重置通知";
+                break;
+
+            case "BatchPasswordReset":
+                body = @"以下用户密码已批量重置：
+
+12345678 | 测试用户A | 新密码: Test@2025A
+87654321 | 测试用户B | 新密码: Test@2025B
+
+（此为测试邮件，请忽略具体内容。）
+
+此邮件由系统自动发送，请勿回复。";
+                subject = "[测试] 批量密码重置通知";
+                break;
+
+            case "NewUserCreate":
+                body = @"尊敬的用户，
+
+您的 GARCHINA 账号 12345678 已创建。
+姓名: 测试用户(Test.User)
+邮箱: test.user@garchina.com
+密码: Test@2025Pwd
+
+（此为测试邮件，请忽略具体内容。）
+
+此邮件由系统自动发送，请勿回复。";
+                subject = "[测试] 新用户AD账号创建通知";
+                break;
+
+            case "OnboardRequest":
+                body = @"[新入职申请]
+
+申请编号: REQ-2025-001
+中文名: 测试用户
+英文名: Test.User
+员工编号: 12345678
+手机号: 13800000000
+所属区域: 华东销售上海所
+申请邮箱: 是
+直接上级邮箱: manager@company.com
+开通VPN: 否
+提交时间: 2025-01-01 09:00:00
+
+（此为测试邮件，请忽略具体内容。）
+
+此邮件由系统自动发送，请勿回复。";
+                subject = "[测试] 新入职申请 - 测试用户(Test.User)";
+                break;
+
+            case "OnboardApproval":
+                body = @"尊敬的用户，
+
+您的 GARCHINA 账号已创建，信息如下：
+姓名: 测试用户(Test.User)
+员工号: 12345678
+手机号: 13800000000
+所属区域: 华东销售上海所
+企业邮箱: test.user@garchina.com
+密码: Test@2025Pwd
+
+（此为测试邮件，请忽略具体内容。）
+
+此邮件由系统自动发送，请勿回复。";
+                subject = "[测试] 新用户AD账号创建通知";
+                break;
+
+            default:
+                body = "未知通知类型的测试邮件。";
+                subject = "[测试] 未知类型";
+                break;
+        }
+
+        Send(config, toAddress, "", subject, body);
+    }
+
     private static EmailConfigData LoadConfig()
     {
         return EmailConfigHelper.LoadConfig();

@@ -73,7 +73,8 @@
     <div class="panel-heading" style="padding:6px 12px;"><strong>邮箱通知配置</strong></div>
     <div class="panel-body" style="padding:8px 12px;">
         <form method="post">
-            <input type="hidden" name="action" value="saveEmailConfig" />
+            <input type="hidden" name="action" value="saveEmailConfig" id="emailAction" />
+            <input type="hidden" name="testType" id="testType" value="" />
 
             @* SMTP 设置 *@
             <fieldset style="border:1px solid #ddd;padding:10px 15px;margin-bottom:12px;">
@@ -109,9 +110,10 @@
                 <legend style="font-size:14px;font-weight:bold;margin-bottom:0;border:none;width:auto;padding:0 5px;">通知收件人配置（每类可独立设置，多地址用逗号分隔）</legend>
                 <table style="width:100%;font-size:12px;">
                     <tr style="border-bottom:1px solid #eee;">
-                        <th style="padding:4px 6px;width:16%;">通知类型</th>
-                        <th style="padding:4px 6px;width:42%;">收件人 (To)</th>
-                        <th style="padding:4px 6px;width:42%;">抄送 (Cc)</th>
+                        <th style="padding:4px 6px;width:14%;">通知类型</th>
+                        <th style="padding:4px 6px;width:36%;">收件人 (To)</th>
+                        <th style="padding:4px 6px;width:36%;">抄送 (Cc)</th>
+                        <th style="padding:4px 6px;width:14%;">操作</th>
                     </tr>
                     @{
                         var notifyKeys = new[] { "SelfPasswordChange", "AdminPasswordReset", "BatchPasswordReset", "NewUserCreate", "OnboardRequest", "OnboardApproval" };
@@ -135,6 +137,9 @@
                             </td>
                             <td style="padding:4px 6px;">
                                 <input class="form-control input-sm" name="NotifyCc[@key]" value="@target.Cc" placeholder="如 cc@company.com" style="font-size:12px;" />
+                            </td>
+                            <td style="padding:4px 6px;vertical-align:middle;text-align:center;">
+                                <button type="submit" name="action" value="testEmail" class="btn btn-info btn-xs" onclick="document.getElementById('testType').value='@key';">测试</button>
                             </td>
                         </tr>
                     }

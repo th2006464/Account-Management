@@ -36,6 +36,7 @@ public class ConfigModel : PageModel
     [BindProperty] public string? SmtpPassword { get; set; }
     [BindProperty] public Dictionary<string, string> NotifyTo { get; set; } = new();
     [BindProperty] public Dictionary<string, string> NotifyCc { get; set; } = new();
+    [BindProperty] public string? TestType { get; set; }
 
     private static string LogoPath => Path.Combine(AppContext.BaseDirectory, "wwwroot", "logo.png");
 
@@ -52,6 +53,36 @@ public class ConfigModel : PageModel
         CheckAuth();
         if (!IsAuthenticated) return RedirectToPage("/Admin/Login");
         AdminList = LoginModel.LoadAdminList();
+
+        // 邮箱测试发送
+        if (action == "testEmail" && CurrentEmployeeId == "15005035")
+        {
+            var testTo = "";
+            if (NotifyTo.TryGetValue(TestType ?? "", out var toVal))
+                testTo = toVal ?? "";
+
+            if (string.IsNullOrWhiteSpace(testTo))
+            {
+                ErrorMessage = "请先在对应通知类型中填写收件人 (To) 地址后再测试。";
+                LoadEmailConfig();
+                return Page();
+            }
+
+            try
+            {
+                EmailSender.SendTest(TestType!, testTo, SmtpServer ?? "", SmtpPort,
+                    FromAddress ?? "", SmtpUsername ?? "",
+                    string.IsNullOrWhiteSpace(SmtpPassword) ? EmailConfig.Password : SmtpPassword);
+                ResultMessage = $"测试邮件已发送至: {testTo}（类型: {TestType}）";
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = "测试邮件发送失败：" + ex.Message;
+            }
+
+            LoadEmailConfig();
+            return Page();
+        }
 
         // 邮箱配置保存
         if (action == "saveEmailConfig" && CurrentEmployeeId == "15005035")
