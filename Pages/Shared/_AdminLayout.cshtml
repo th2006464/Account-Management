@@ -71,6 +71,7 @@
 <a asp-page="/Admin/Request" class="@(currentPage.Contains("Request") ? "active" : "")"><span class="glyphicon glyphicon-ok-circle"></span> 等待创建用户 @if(pendingCount>0){<span class="badge" style="background:#d9534f;margin-left:4px;">@pendingCount</span>}</a>
             <a asp-page="/Admin/NewUser" class="@(currentPage.Contains("NewUser") ? "active" : "")"><span class="glyphicon glyphicon-plus"></span> 手动创建用户</a>
             <a asp-page="/Admin/BatchUser" class="@(currentPage.Contains("BatchUser") ? "active" : "")"><span class="glyphicon glyphicon-th-list"></span> 批量用户管理</a>
+            <a asp-page="/Admin/SinarmasUser" class="@(currentPage.Contains("SinarmasUser") ? "active" : "")"><span class="glyphicon glyphicon-globe"></span> Sinarmas用户查询</a>
             <a href="https://www.garchina.com/ams" target="_blank"><span class="glyphicon glyphicon-hdd"></span> 资产信息查询</a>
         </div>
         <div class="logout-area" style="display:flex;justify-content:space-between;">

@@ -1,8 +1,5 @@
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -38,9 +35,7 @@ public class SinarmasUserModel : PageModel
         if (!IsAuthenticated) return RedirectToPage("/Admin/Login");
 
         if (action == "search")
-            SearchUser();
-        else if (action == "unlock")
-            UnlockUser();
+            SearchAndUnlock();
 
         if (UserDetail != null) TempData["UserDetail"] = UserDetail;
         if (ResultMessage != null) TempData["ResultMessage"] = ResultMessage;
@@ -61,7 +56,7 @@ public class SinarmasUserModel : PageModel
         }
     }
 
-    private void SearchUser()
+    private void SearchAndUnlock()
     {
         if (string.IsNullOrWhiteSpace(SearchEmployeeId))
         {
@@ -71,28 +66,22 @@ public class SinarmasUserModel : PageModel
 
         try
         {
-            var result = RunWithTimeout(() => QuerySinarmasUser(SearchEmployeeId), TimeSpan.FromSeconds(10));
+            var result = RunWithTimeout(() => QueryAndUnlock(SearchEmployeeId), TimeSpan.FromSeconds(55));
 
             if (result.Timeout)
             {
-                ErrorMessage = "查询超时（10秒），sinarmas-agri.com 域控制器可能不可达。";
+                ErrorMessage = "查询超时（55秒），sinarmas-agri.com 域控制器可能不可达。";
                 return;
             }
 
             if (result.Error != null)
             {
-                ErrorMessage = $"查询失败：{result.Error}";
-                return;
-            }
-
-            if (result.Lines == null || result.Lines.Count == 0)
-            {
-                ErrorMessage = $"[sinarmas-agri.com] 未找到员工号 '{SearchEmployeeId}' 对应的用户。";
+                ErrorMessage = result.Error;
                 return;
             }
 
             UserDetail = string.Join(Environment.NewLine, result.Lines);
-            ResultMessage = "查询成功。";
+            ResultMessage = result.UnlockMessage ?? "查询成功。";
         }
         catch (Exception ex)
         {
@@ -100,50 +89,12 @@ public class SinarmasUserModel : PageModel
         }
     }
 
-    private void UnlockUser()
-    {
-        if (string.IsNullOrWhiteSpace(SearchEmployeeId))
-        {
-            ErrorMessage = "请输入员工号。";
-            return;
-        }
-
-        try
-        {
-            var result = RunWithTimeout(() =>
-            {
-                using var context = new PrincipalContext(ContextType.Domain, "sinarmas-agri.com");
-                using var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, SearchEmployeeId);
-                if (user == null) return ("[sinarmas-agri.com] 未找到该用户。", false);
-
-                if (!user.IsAccountLockedOut())
-                    return ("账号未锁定，无需解锁。", false);
-
-                user.UnlockAccount();
-                user.Save();
-                return ("账号已成功解锁！", true);
-            }, TimeSpan.FromSeconds(10));
-
-            if (result.Timeout)
-            {
-                ErrorMessage = "操作超时（10秒），sinarmas-agri.com 域控制器可能不可达。";
-                return;
-            }
-
-            ResultMessage = result.Message;
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = "解锁失败：" + ex.Message;
-        }
-    }
-
-    private static QueryResult QuerySinarmasUser(string employeeId)
+    private static QueryAndUnlockResult QueryAndUnlock(string employeeId)
     {
         using var context = new PrincipalContext(ContextType.Domain, "sinarmas-agri.com");
         using var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, employeeId);
         if (user == null)
-            return new QueryResult { Lines = null };
+            return new QueryAndUnlockResult { Error = $"[sinarmas-agri.com] 未找到员工号 '{employeeId}' 对应的用户。" };
 
         var entry = (DirectoryEntry)user.GetUnderlyingObject();
         var lines = new List<string>
@@ -175,38 +126,41 @@ public class SinarmasUserModel : PageModel
             lines.Add("所属组: (无法获取)");
         }
 
-        return new QueryResult { Lines = lines };
-    }
-
-    private static (string? Message, bool Timeout) RunWithTimeout(Func<(string, bool)> action, TimeSpan timeout)
-    {
-        using var cts = new CancellationTokenSource();
-        var task = Task.Run(action, cts.Token);
-        if (task.Wait(timeout))
+        // 查询后自动尝试解锁
+        string? unlockMsg = null;
+        if (user.IsAccountLockedOut())
         {
-            var r = task.Result;
-            return (r.Item1, false);
+            try
+            {
+                user.UnlockAccount();
+                user.Save();
+                unlockMsg = "账号已锁定，已自动解锁。";
+            }
+            catch (Exception ex)
+            {
+                unlockMsg = $"账号已锁定，解锁失败：{ex.Message}";
+            }
         }
-        cts.Cancel();
-        return (null, true);
+
+        return new QueryAndUnlockResult { Lines = lines, UnlockMessage = unlockMsg };
     }
 
-    private static QueryResult RunWithTimeout(Func<QueryResult> action, TimeSpan timeout)
+    private static QueryAndUnlockResult RunWithTimeout(Func<QueryAndUnlockResult> action, TimeSpan timeout)
     {
         using var cts = new CancellationTokenSource();
         var task = Task.Run(action, cts.Token);
         if (task.Wait(timeout))
-        {
             return task.Result;
-        }
+
         cts.Cancel();
-        return new QueryResult { Timeout = true };
+        return new QueryAndUnlockResult { Timeout = true };
     }
 
-    private class QueryResult
+    private class QueryAndUnlockResult
     {
-        public List<string>? Lines { get; set; }
+        public List<string> Lines { get; set; } = new();
         public string? Error { get; set; }
+        public string? UnlockMessage { get; set; }
         public bool Timeout { get; set; }
     }
 }

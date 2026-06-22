@@ -10,7 +10,6 @@
     return;
 }
 
-
 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
 {
     <div class="alert alert-danger">@Model.ErrorMessage</div>
@@ -22,29 +21,24 @@
 
 <form method="post" id="mainForm">
     <div class="panel panel-default">
-        <div class="panel-heading"><strong>搜索用户</strong></div>
-        <div class="panel-body">
-            <div style="display: flex; gap: 10px;">
-                <input class="form-control" id="SearchEmployeeId" name="SearchEmployeeId" value="@Model.SearchEmployeeId" style="flex: 1;" placeholder="输入员工号" autocomplete="off" />
-                <button type="submit" name="action" value="search" class="btn btn-primary">搜索</button>
+        <div class="panel-heading" style="padding:6px 12px;"><strong>查询并解锁用户</strong></div>
+        <div class="panel-body" style="padding:8px 12px;">
+            <div style="display:flex;gap:8px;">
+                <input class="form-control" id="SearchEmployeeId" name="SearchEmployeeId" value="@Model.SearchEmployeeId" style="flex:1;" placeholder="输入员工号" autocomplete="off" />
+                <button type="submit" name="action" value="search" class="btn btn-primary">查询并解锁用户</button>
             </div>
         </div>
     </div>
 
-    <div class="panel panel-warning" style="margin-top: 20px;">
-        <div class="panel-heading"><strong>控制面板</strong></div>
-        <div class="panel-body">
-            <button type="submit" name="action" value="unlock" class="btn btn-warning">解锁用户</button>
-        </div>
-    </div>
+    <input type="hidden" name="action" value="search" id="hiddenAction" />
 </form>
 
 @if (!string.IsNullOrEmpty(Model.UserDetail))
 {
-    <div class="panel panel-success" style="margin-top: 10px;">
-        <div class="panel-heading">用户详细信息</div>
-        <div class="panel-body">
-            <pre>@Model.UserDetail</pre>
+    <div class="panel panel-success" style="margin-top:8px;">
+        <div class="panel-heading" style="padding:6px 12px;">用户详细信息</div>
+        <div class="panel-body" style="padding:8px 12px;">
+            <pre style="margin:0;font-size:12px;">@Model.UserDetail</pre>
         </div>
     </div>
 }
@@ -69,7 +63,7 @@
         submitting = true;
         var btns = form.querySelectorAll('button[type="submit"]');
         setTimeout(function() { btns.forEach(function(b) { b.disabled = true; }); }, 0);
-        setTimeout(function() { submitting = false; btns.forEach(function(b) { b.disabled = false; }); }, 10000);
+        setTimeout(function() { submitting = false; btns.forEach(function(b) { b.disabled = false; }); }, 60000);
     });
 })();
 </script>
