@@ -13,6 +13,7 @@ public class IndexModel : PageModel
     public string? UserDetail { get; set; }
     public string? ResultMessage { get; set; }
     public string? ErrorMessage { get; set; }
+    public string? ResultDomain { get; set; }
 
     public void OnGet()
     {
@@ -20,9 +21,10 @@ public class IndexModel : PageModel
         if (TempData["ResultMessage"] is string rm) ResultMessage = rm;
         if (TempData["ErrorMessage"] is string em) ErrorMessage = em;
         if (TempData["SearchEmployeeId"] is string se) SearchEmployeeId = se;
+        if (TempData["ResultDomain"] is string rd) ResultDomain = rd;
     }
 
-    public IActionResult OnPost()
+    public IActionResult OnPost(string domain)
     {
         if (string.IsNullOrWhiteSpace(SearchEmployeeId))
         {
@@ -33,15 +35,20 @@ public class IndexModel : PageModel
 
         try
         {
-            var result = RunWithTimeout(() => QueryAndUnlock(SearchEmployeeId), TimeSpan.FromSeconds(55));
+            bool isGarchina = domain == "garchina";
+            string domainName = isGarchina ? "garchina.com" : "sinarmas-agri.com";
+            TimeSpan timeout = isGarchina ? TimeSpan.FromSeconds(15) : TimeSpan.FromSeconds(55);
+
+            var result = RunWithTimeout(() => QueryAndUnlock(SearchEmployeeId, domainName), timeout);
 
             if (result.Timeout)
-                ErrorMessage = "查询超时（55秒），sinarmas-agri.com 域控制器可能不可达。";
+                ErrorMessage = $"查询超时，{domainName} 域控制器可能不可达。";
             else if (result.Error != null)
                 ErrorMessage = result.Error;
             else
             {
                 UserDetail = string.Join(Environment.NewLine, result.Lines);
+                ResultDomain = isGarchina ? "GARCHINA" : "Sinarmas";
                 ResultMessage = result.UnlockMessage ?? "查询成功。";
             }
         }
@@ -54,21 +61,22 @@ public class IndexModel : PageModel
         TempData["ResultMessage"] = ResultMessage;
         TempData["ErrorMessage"] = ErrorMessage;
         TempData["SearchEmployeeId"] = SearchEmployeeId;
+        TempData["ResultDomain"] = ResultDomain;
 
         return RedirectToPage();
     }
 
-    private static QueryResult QueryAndUnlock(string employeeId)
+    private static QueryResult QueryAndUnlock(string employeeId, string domainName)
     {
-        using var context = new PrincipalContext(ContextType.Domain, "sinarmas-agri.com");
+        using var context = new PrincipalContext(ContextType.Domain, domainName);
         using var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, employeeId);
         if (user == null)
-            return new QueryResult { Error = $"[sinarmas-agri.com] 未找到员工号 '{employeeId}' 对应的用户。" };
+            return new QueryResult { Error = $"[{domainName}] 未找到员工号 '{employeeId}' 对应的用户。" };
 
         var entry = (DirectoryEntry)user.GetUnderlyingObject();
         var lines = new List<string>
         {
-            $"=== sinarmas-agri.com 用户信息 ===",
+            $"=== {domainName} 用户信息 ===",
             $"显示名称: {user.DisplayName}",
             $"员工号: {user.EmployeeId}",
             $"启用状态: {(user.Enabled == true ? "是" : "否")}",
