@@ -67,3 +67,81 @@
         </form>
     </div>
 </div>
+
+@* 邮箱配置面板 *@
+<div class="panel panel-info" style="margin-top:8px;">
+    <div class="panel-heading" style="padding:6px 12px;"><strong>邮箱通知配置</strong></div>
+    <div class="panel-body" style="padding:8px 12px;">
+        <form method="post">
+            <input type="hidden" name="action" value="saveEmailConfig" />
+
+            @* SMTP 设置 *@
+            <fieldset style="border:1px solid #ddd;padding:10px 15px;margin-bottom:12px;">
+                <legend style="font-size:14px;font-weight:bold;margin-bottom:0;border:none;width:auto;padding:0 5px;">SMTP 服务器设置</legend>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <div class="form-group" style="flex:2;min-width:200px;margin-bottom:4px;">
+                        <label style="font-size:12px;">服务器地址</label>
+                        <input class="form-control input-sm" name="SmtpServer" value="@Model.EmailConfig.SmtpServer" placeholder="mail.example.com" />
+                    </div>
+                    <div class="form-group" style="flex:1;min-width:80px;margin-bottom:4px;">
+                        <label style="font-size:12px;">端口</label>
+                        <input class="form-control input-sm" name="SmtpPort" type="number" value="@Model.EmailConfig.SmtpPort" />
+                    </div>
+                    <div class="form-group" style="flex:2;min-width:200px;margin-bottom:4px;">
+                        <label style="font-size:12px;">发件人地址</label>
+                        <input class="form-control input-sm" name="FromAddress" value="@Model.EmailConfig.FromAddress" placeholder="it@company.com" />
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <div class="form-group" style="flex:2;min-width:200px;margin-bottom:0;">
+                        <label style="font-size:12px;">SMTP 用户名</label>
+                        <input class="form-control input-sm" name="SmtpUsername" value="@Model.EmailConfig.Username" placeholder="user@company.com" />
+                    </div>
+                    <div class="form-group" style="flex:2;min-width:200px;margin-bottom:0;">
+                        <label style="font-size:12px;">SMTP 密码（留空不修改）</label>
+                        <input class="form-control input-sm" name="SmtpPassword" type="password" placeholder="留空则不修改" autocomplete="new-password" />
+                    </div>
+                </div>
+            </fieldset>
+
+            @* 通知类型收件配置 *@
+            <fieldset style="border:1px solid #ddd;padding:10px 15px;margin-bottom:12px;">
+                <legend style="font-size:14px;font-weight:bold;margin-bottom:0;border:none;width:auto;padding:0 5px;">通知收件人配置（每类可独立设置，多地址用逗号分隔）</legend>
+                <table style="width:100%;font-size:12px;">
+                    <tr style="border-bottom:1px solid #eee;">
+                        <th style="padding:4px 6px;width:16%;">通知类型</th>
+                        <th style="padding:4px 6px;width:42%;">收件人 (To)</th>
+                        <th style="padding:4px 6px;width:42%;">抄送 (Cc)</th>
+                    </tr>
+                    @{
+                        var notifyKeys = new[] { "SelfPasswordChange", "AdminPasswordReset", "BatchPasswordReset", "NewUserCreate", "OnboardRequest", "OnboardApproval" };
+                        var notifyLabels = new Dictionary<string, string>
+                        {
+                            ["SelfPasswordChange"] = "自助密码修改",
+                            ["AdminPasswordReset"] = "管理员密码重置",
+                            ["BatchPasswordReset"] = "批量密码重置",
+                            ["NewUserCreate"] = "新用户创建",
+                            ["OnboardRequest"] = "入职申请通知",
+                            ["OnboardApproval"] = "入职审批通知",
+                        };
+                    }
+                    @foreach (var key in notifyKeys)
+                    {
+                        var target = Model.EmailConfig.Notifications.GetValueOrDefault(key) ?? new AccountManagement.Models.EmailNotifyTarget();
+                        <tr style="border-bottom:1px solid #f5f5f5;">
+                            <td style="padding:4px 6px;vertical-align:middle;"><strong>@(notifyLabels.GetValueOrDefault(key, key))</strong></td>
+                            <td style="padding:4px 6px;">
+                                <input class="form-control input-sm" name="NotifyTo[@key]" value="@target.To" placeholder="如 admin@company.com" style="font-size:12px;" />
+                            </td>
+                            <td style="padding:4px 6px;">
+                                <input class="form-control input-sm" name="NotifyCc[@key]" value="@target.Cc" placeholder="如 cc@company.com" style="font-size:12px;" />
+                            </td>
+                        </tr>
+                    }
+                </table>
+            </fieldset>
+
+            <button type="submit" class="btn btn-success btn-sm">保存邮箱配置</button>
+        </form>
+    </div>
+</div>

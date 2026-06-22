@@ -1,9 +1,5 @@
 using System.DirectoryServices.AccountManagement;
-using System.Linq;
-using System.Net;
-using System.Net.Mail;
 using System.Runtime.Versioning;
-using System.Threading.Tasks;
 using AccountManagement.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -14,12 +10,10 @@ namespace AccountManagement.Pages;
 public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
-    private readonly IConfiguration _configuration;
 
-    public IndexModel(ILogger<IndexModel> logger, IConfiguration configuration)
+    public IndexModel(ILogger<IndexModel> logger)
     {
         _logger = logger;
-        _configuration = configuration;
     }
 
     [BindProperty]
@@ -165,7 +159,7 @@ public class IndexModel : PageModel
             {
                 _ = Task.Run(() =>
                 {
-                    try { SendPasswordUpdateEmail(empId, pwd, userEmail); }
+                    try { EmailSender.SendSelfPasswordChange(empId, pwd, userEmail); }
                     catch (Exception ex) { _logger.LogError(ex, "密码更新邮件发送失败"); }
                 });
             }
@@ -263,52 +257,4 @@ public class IndexModel : PageModel
         catch { }
     }
 
-    private void SendPasswordUpdateEmail(string employeeId, string newPassword, string toEmail)
-    {
-        ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, errors) => true;
-
-        var smtpServer = _configuration["EmailSettings:SmtpServer"] ?? "";
-        var smtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "587");
-        var fromAddress = _configuration["EmailSettings:FromAddress"] ?? "";
-        var username = _configuration["EmailSettings:Username"] ?? "";
-        var password = _configuration["EmailSettings:Password"] ?? "";
-
-        var body = $@"尊敬的用户，
-
-您的 GARCHINA 账号 {employeeId} 密码已更新。
-新密码为：{newPassword}
-
-此密码适用于：
-- GARCHINA 系统认证
-- China OA 系统
-- GARCHINA VPN
-- Workday 请休假系统
-
-特别注意：
-1. 复制粘贴密码时，请先粘贴到记事本，检查是否有空格。
-2. 输入密码后，点击密码框旁的小眼睛图标确认输入正确。
-3. 请尽快更新默认密码，密码更新后会自动同步至邮箱系统。
-4. ChinaOA、Workday系统登录时请注意用户名格式。
-
-如有问题，请联系中国区 IT 部门：
-邮箱：CN_IT_Support@sinarmas-agri.com
-
-此邮件由系统自动发送，请勿回复。";
-
-        using var client = new SmtpClient(smtpServer, smtpPort)
-        {
-            EnableSsl = true,
-            Credentials = new NetworkCredential(username, password)
-        };
-
-        using var message = new MailMessage(fromAddress, toEmail)
-        {
-            Subject = "[IT信息] 用户AD账号密码更新通知",
-            Body = body,
-            BodyEncoding = System.Text.Encoding.UTF8,
-            IsBodyHtml = false
-        };
-
-        client.Send(message);
-    }
 }

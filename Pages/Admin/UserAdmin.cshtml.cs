@@ -1,9 +1,6 @@
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
-using System.Net;
-using System.Net.Mail;
 using System.Text.Json;
-using System.Threading.Tasks;
 using AccountManagement.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -13,7 +10,6 @@ namespace AccountManagement.Pages.Admin;
 public class UserAdminModel : PageModel
 {
     private readonly ILogger<UserAdminModel> _logger;
-    private readonly IConfiguration _configuration;
 
     private static readonly object s_lock = new();
     private static List<string>? s_resetHistory;
@@ -28,10 +24,9 @@ public class UserAdminModel : PageModel
     private static string GroupHistoryFile => Path.Combine(StoragePath, "group_history.dat");
     private static string AuditLogFile => Path.Combine(StoragePath, "audit.dat");
 
-    public UserAdminModel(ILogger<UserAdminModel> logger, IConfiguration configuration)
+    public UserAdminModel(ILogger<UserAdminModel> logger)
     {
         _logger = logger;
-        _configuration = configuration;
     }
 
     public bool IsAuthenticated { get; set; }
@@ -431,7 +426,7 @@ public class UserAdminModel : PageModel
             {
                 try
                 {
-                    SendEmail(empId, pwd, empName);
+                    EmailSender.SendAdminPasswordReset(empId, pwd, empName);
                     AddEmailStatus($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | 邮件发送成功 | 账号: {empId}");
                 }
                 catch (Exception ex)
@@ -486,58 +481,6 @@ public class UserAdminModel : PageModel
         var bytes = new byte[4];
         rng.GetBytes(bytes);
         return (int)(BitConverter.ToUInt32(bytes, 0) % (uint)max);
-    }
-
-    private void SendEmail(string employeeId, string newPassword, string displayName)
-    {
-        ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, errors) => true;
-
-        var smtpServer = _configuration["EmailSettings:SmtpServer"] ?? "";
-        var smtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "587");
-        var fromAddress = _configuration["EmailSettings:FromAddress"] ?? "";
-        var toAddress = _configuration["EmailSettings:ToAddress"] ?? "";
-        var ccAddress = _configuration["EmailSettings:CcAddress"] ?? "";
-        var username = _configuration["EmailSettings:Username"] ?? "";
-        var password = _configuration["EmailSettings:Password"] ?? "";
-
-        var body = $@"尊敬的用户，
-
-您的 GARCHINA 账号 {employeeId} 的密码已重置。
-新密码为：{newPassword}
-
-此密码适用于：
-- GARCHINA 系统认证
-- China OA 系统
-- GARCHINA VPN
-- Workday 请休假系统
-
-特别注意：
-1. 复制粘贴密码时，请先粘贴到记事本，检查是否有空格。
-2. 输入密码后，点击密码框旁的小眼睛图标确认输入正确。
-3. 请尽快更新默认密码，密码更新后会自动同步至邮箱系统。
-4. ChinaOA、Workday系统登录时请注意用户名格式。
-
-如有问题，请联系中国区 IT 部门：
-邮箱：CN_IT_Support@sinarmas-agri.com
-
-此邮件由系统 [10.95.0.62] 自动发送，请勿回复。";
-
-        using var client = new SmtpClient(smtpServer, smtpPort)
-        {
-            EnableSsl = true,
-            Credentials = new NetworkCredential(username, password)
-        };
-
-        using var message = new MailMessage(fromAddress, toAddress)
-        {
-            Subject = "[IT信息] 用户AD 账号密码重置通知",
-            Body = body,
-            BodyEncoding = System.Text.Encoding.UTF8,
-            IsBodyHtml = false
-        };
-        message.CC.Add(ccAddress);
-
-        client.Send(message);
     }
 
     private void OffboardUser()

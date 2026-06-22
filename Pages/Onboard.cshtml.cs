@@ -1,8 +1,5 @@
 using AccountManagement.Helpers;
-using System.Net;
-using System.Net.Mail;
 using System.Text.Json;
-using System.Threading.Tasks;
 using AccountManagement.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -11,11 +8,8 @@ namespace AccountManagement.Pages;
 
 public class OnboardModel : PageModel
 {
-    private readonly IConfiguration _configuration;
-
-    public OnboardModel(IConfiguration configuration)
+    public OnboardModel()
     {
-        _configuration = configuration;
     }
 
     [BindProperty]
@@ -134,7 +128,7 @@ public class OnboardModel : PageModel
         var req = request;
         _ = Task.Run(() =>
         {
-            try { SendNotificationEmail(req); }
+            try { EmailSender.SendOnboardRequest(req); }
             catch { }
         });
 
@@ -194,50 +188,6 @@ public class OnboardModel : PageModel
         {
             return false;
         }
-    }
-
-    private void SendNotificationEmail(OnboardRequest req)
-    {
-        ServicePointManager.ServerCertificateValidationCallback = (_, _, _, _) => true;
-        var smtpServer = _configuration["EmailSettings:SmtpServer"] ?? "";
-        var smtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "587");
-        var from = _configuration["EmailSettings:FromAddress"] ?? "";
-        var to = _configuration["EmailSettings:ToAddress"] ?? "";
-        var cc = _configuration["EmailSettings:CcAddress"] ?? "";
-        var user = _configuration["EmailSettings:Username"] ?? "";
-        var pass = _configuration["EmailSettings:Password"] ?? "";
-
-        var managerInfo = req.NeedEmail == "是" && !string.IsNullOrWhiteSpace(req.ManagerEmail)
-            ? $"直接上级邮箱: {req.ManagerEmail}\n" : "";
-        var contactInfo = !string.IsNullOrWhiteSpace(req.ContactEmail)
-            ? $"回传邮箱: {req.ContactEmail}\n" : "";
-        var vpnInfo = req.NeedVpn == "是"
-            ? $"开通VPN: 是 (SAP:{(req.VpnSap ? "是" : "否")} | TPM:{(req.VpnTpm ? "是" : "否")})\n" : "开通VPN: 否\n";
-
-        var body = $@"[新入职申请]
-
-申请编号: {req.Id}
-中文名: {req.CnName}
-英文名: {req.EnName}
-员工编号: {req.EmployeeId}
-手机号: {req.Mobile}
-所属区域: {req.Region}
-申请邮箱: {req.NeedEmail}
-{managerInfo}{contactInfo}{vpnInfo}提交时间: {req.SubmitTime}
-
-请登录管理员页面进行审批：https://www.garchina.com/account/Admin/Request
-
-此邮件由系统自动发送，请勿回复。";
-
-        using var client = new SmtpClient(smtpServer, smtpPort) { EnableSsl = true, Credentials = new NetworkCredential(user, pass) };
-        using var msg = new MailMessage(from, to)
-        {
-            Subject = $"[IT信息] 新入职申请 - {req.CnName}({req.EnName})",
-            Body = body,
-            BodyEncoding = System.Text.Encoding.UTF8
-        };
-        msg.CC.Add(cc);
-        client.Send(msg);
     }
 
     public static void SaveAllRequests(List<OnboardRequest> list)

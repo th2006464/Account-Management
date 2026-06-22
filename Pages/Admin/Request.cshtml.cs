@@ -1,9 +1,6 @@
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
-using System.Net;
-using System.Net.Mail;
 using System.Text.Json;
-using System.Threading.Tasks;
 using AccountManagement.Helpers;
 using AccountManagement.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -185,7 +182,7 @@ public class RequestModel : PageModel
             var contactEmail = req.ContactEmail;
             _ = Task.Run(() =>
             {
-                try { SendCreateEmail(cn, en, emp, pwd, emailAddr, mobile, region, contactEmail); }
+                try { EmailSender.SendOnboardApproval(cn, en, emp, pwd, emailAddr, mobile, region, contactEmail); }
                 catch (Exception ex) { _logger.LogError(ex, "入职邮件发送失败"); }
             });
 
@@ -246,48 +243,4 @@ public class RequestModel : PageModel
         catch { }
     }
 
-    private void SendCreateEmail(string cnName, string enName, string employeeId, string newPassword, string emailAddr,
-        string mobile, string region, string contactEmail)
-    {
-        ServicePointManager.ServerCertificateValidationCallback = (_, _, _, _) => true;
-        var smtpServer = _configuration["EmailSettings:SmtpServer"] ?? "";
-        var smtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "587");
-        var from = _configuration["EmailSettings:FromAddress"] ?? "";
-        var cc = _configuration["EmailSettings:CcAddress"] ?? "";
-        var user = _configuration["EmailSettings:Username"] ?? "";
-        var pass = _configuration["EmailSettings:Password"] ?? "";
-
-        var body = $@"尊敬的用户，
-
-您的 GARCHINA 账号已创建，信息如下：
-姓名: {cnName}({enName})
-员工号: {employeeId}
-手机号: {mobile}
-所属区域: {region}
-企业邮箱: {emailAddr}
-密码: {newPassword}
-
-此账号适用于 GARCHINA 系统认证、China OA 系统、GARCHINA VPN、Workday 请休假系统。
-请尽快登录并修改密码。密码有效期 90 天。
-
-邮箱账号需要雅加达邮箱管理团队创建，请留意后续邮件。
-
-如有问题，请联系中国区 IT 部门：CN_IT_Support@sinarmas-agri.com
-此邮件由系统自动发送，请勿回复。";
-
-        using var client = new SmtpClient(smtpServer, smtpPort) { EnableSsl = true, Credentials = new NetworkCredential(user, pass) };
-
-        // 主收件人（管理员）
-        var toAdmin = _configuration["EmailSettings:ToAddress"] ?? "";
-        using var msg = new MailMessage(from, toAdmin) { Subject = "[IT信息] 新用户AD账号创建通知", Body = body, BodyEncoding = System.Text.Encoding.UTF8 };
-        msg.CC.Add(cc);
-        client.Send(msg);
-
-        // 如果填写了回传邮箱，额外发给用户一份
-        if (!string.IsNullOrWhiteSpace(contactEmail) && contactEmail != toAdmin)
-        {
-            using var userMsg = new MailMessage(from, contactEmail) { Subject = "[IT信息] GARCHINA账号创建通知", Body = body, BodyEncoding = System.Text.Encoding.UTF8 };
-            client.Send(userMsg);
-        }
-    }
 }

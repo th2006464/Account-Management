@@ -1,9 +1,6 @@
 using AccountManagement.Helpers;
 using System.DirectoryServices;
-using System.Net;
-using System.Net.Mail;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -172,7 +169,7 @@ public class NewUserModel : PageModel
             {
                 try
                 {
-                    SendCreateEmail(cn, en, emp, pwd, email);
+                    EmailSender.SendNewUserCreated(cn, en, emp, pwd, email);
                     AddEmailStatus($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | 邮件发送成功 | {cn}({en})");
                 }
                 catch (Exception ex)
@@ -226,58 +223,6 @@ public class NewUserModel : PageModel
         var bytes = new byte[4];
         rng.GetBytes(bytes);
         return (int)(BitConverter.ToUInt32(bytes, 0) % (uint)max);
-    }
-
-    private void SendCreateEmail(string cnName, string enName, string employeeId, string newPassword, string emailAddr)
-    {
-        ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, errors) => true;
-
-        var smtpServer = _configuration["EmailSettings:SmtpServer"] ?? "";
-        var smtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "587");
-        var fromAddress = _configuration["EmailSettings:FromAddress"] ?? "";
-        var toAddress = _configuration["EmailSettings:ToAddress"] ?? "";
-        var ccAddress = _configuration["EmailSettings:CcAddress"] ?? "";
-        var username = _configuration["EmailSettings:Username"] ?? "";
-        var password = _configuration["EmailSettings:Password"] ?? "";
-
-        var body = $@"尊敬的用户，
-
-您的 GARCHINA 账号 {employeeId} 已创建。
-姓名: {cnName}({enName})
-邮箱: {emailAddr}
-密码: {newPassword}
-
-此账号适用于：
-- GARCHINA 系统认证
-- China OA 系统
-- GARCHINA VPN
-- Workday 请休假系统
-
-特别注意：
-1. 请尽快登录并修改密码。
-2. 密码有效期 90 天。
-
-如有问题，请联系中国区 IT 部门：
-邮箱：CN_IT_Support@sinarmas-agri.com
-
-此邮件由系统自动发送，请勿回复。";
-
-        using var client = new SmtpClient(smtpServer, smtpPort)
-        {
-            EnableSsl = true,
-            Credentials = new NetworkCredential(username, password)
-        };
-
-        using var message = new MailMessage(fromAddress, toAddress)
-        {
-            Subject = "[IT信息] 新用户AD账号创建通知",
-            Body = body,
-            BodyEncoding = System.Text.Encoding.UTF8,
-            IsBodyHtml = false
-        };
-        message.CC.Add(ccAddress);
-
-        client.Send(message);
     }
 
     // ---- 审计日志（永不清除） ----
