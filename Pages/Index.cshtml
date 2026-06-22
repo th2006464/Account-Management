@@ -22,6 +22,11 @@
     </div>
 </div>
 
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
 <form method="post" id="mainForm" autocomplete="off">
     <div class="panel panel-default">
         <div class="panel-heading">账号操作</div>
@@ -72,15 +77,29 @@
             </div>
         </div>
     }
-    else if (!string.IsNullOrEmpty(Model.ResultMessage))
-    {
-        <div class="alert alert-success" style="white-space: pre-line;">@Model.ResultMessage</div>
-    }
-    else if (!string.IsNullOrEmpty(Model.ErrorMessage))
-    {
-        <div class="alert alert-danger">@Model.ErrorMessage</div>
-    }
 </div>
+
+@* 密码更新成功弹窗 *@
+@if (!Model.IsQueryResult && !string.IsNullOrEmpty(Model.ResultMessage))
+{
+    <div class="modal fade" id="successModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background:#5cb85c;color:#fff;border-radius:5px 5px 0 0;">
+                    <button type="button" class="close" data-dismiss="modal" style="color:#fff;opacity:0.8;">&times;</button>
+                    <h4 class="modal-title">&#10004; 密码更新成功</h4>
+                </div>
+                <div class="modal-body" style="font-size:14px;line-height:1.8;">
+                    <pre style="white-space:pre-line;background:none;border:none;padding:0;margin:0;font-size:14px;">@Model.ResultMessage</pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success btn-lg" data-dismiss="modal" style="width:100%;">我已记录新密码，关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>(function(){ $(function(){ $('#successModal').modal('show'); }); })();</script>
+}
 
 <!-- 确认弹窗 -->
 <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog">

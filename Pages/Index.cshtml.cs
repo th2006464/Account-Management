@@ -37,6 +37,7 @@ public class IndexModel : PageModel
     public string? AccountStatus { get; private set; }
     public string? ResultMessage { get; private set; }
     public string? ErrorMessage { get; private set; }
+    public bool IsQueryResult { get; private set; }
 
     public void OnGet()
     {
@@ -60,6 +61,7 @@ public class IndexModel : PageModel
 
     private void QueryAccountStatus()
     {
+        IsQueryResult = true;
         if (string.IsNullOrWhiteSpace(Username))
         {
             ErrorMessage = "请输入GARCHINA员工号。";
