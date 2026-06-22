@@ -33,6 +33,11 @@
     <input type="hidden" name="action" value="search" id="hiddenAction" />
 </form>
 
+@* 查询等待提示（点击按钮后显示） *@
+<div id="waitingMsg" class="alert alert-info" style="display:none;margin-top:8px;">
+    &#9203; Sinarmas域跨域查询因线路问题可能需要<strong>30秒</strong>左右，请耐心等待返回结果...
+</div>
+
 @if (!string.IsNullOrEmpty(Model.UserDetail))
 {
     <div class="panel panel-success" style="margin-top:8px;">
@@ -61,6 +66,7 @@
             return false;
         }
         submitting = true;
+        document.getElementById('waitingMsg').style.display = 'block';
         var btns = form.querySelectorAll('button[type="submit"]');
         setTimeout(function() { btns.forEach(function(b) { b.disabled = true; }); }, 0);
         setTimeout(function() { submitting = false; btns.forEach(function(b) { b.disabled = false; }); }, 60000);
