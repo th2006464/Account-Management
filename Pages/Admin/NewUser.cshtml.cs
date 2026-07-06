@@ -147,7 +147,7 @@ public class NewUserModel : PageModel
             pwdUser.Properties["userAccountControl"].Value = 512;
             pwdUser.CommitChanges();
 
-            var now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            var now = TimeHelper.BeijingNow.ToString("yyyy-MM-dd HH:mm:ss");
             CreateResults.Add($"用户创建成功！");
             CreateResults.Add($"中文名: {cnName}");
             CreateResults.Add($"英文名: {enName}");
@@ -170,12 +170,12 @@ public class NewUserModel : PageModel
                 try
                 {
                     EmailSender.SendNewUserCreated(cn, en, emp, pwd, email);
-                    AddEmailStatus($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | 邮件发送成功 | {cn}({en})");
+                    AddEmailStatus($"{TimeHelper.BeijingNow:yyyy-MM-dd HH:mm:ss} | 邮件发送成功 | {cn}({en})");
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "创建用户邮件发送失败");
-                    AddEmailStatus($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | 邮件发送失败: {ex.Message} | {cn}({en})");
+                    AddEmailStatus($"{TimeHelper.BeijingNow:yyyy-MM-dd HH:mm:ss} | 邮件发送失败: {ex.Message} | {cn}({en})");
                 }
             });
 
@@ -234,7 +234,7 @@ public class NewUserModel : PageModel
         try
         {
             Directory.CreateDirectory(StoragePath);
-            var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | {entry}{Environment.NewLine}";
+            var line = $"{TimeHelper.BeijingNow:yyyy-MM-dd HH:mm:ss} | {entry}{Environment.NewLine}";
             lock (s_lock)
             {
                 FileProtection.AppendAllText(AuditLogPath, line);

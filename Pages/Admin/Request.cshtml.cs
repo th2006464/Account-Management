@@ -237,7 +237,7 @@ public class RequestModel : PageModel
         {
             var dir = Path.Combine(AppContext.BaseDirectory, "App_Data");
             Directory.CreateDirectory(dir);
-            var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | {entry}{Environment.NewLine}";
+            var line = $"{TimeHelper.BeijingNow:yyyy-MM-dd HH:mm:ss} | {entry}{Environment.NewLine}";
             FileProtection.AppendAllText(Path.Combine(dir, "audit.dat"), line);
         }
         catch { }

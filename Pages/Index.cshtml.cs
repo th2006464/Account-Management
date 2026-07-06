@@ -90,8 +90,8 @@ public class IndexModel : PageModel
             $"员工号: {user.EmployeeId}",
             $"账号启用: {user.Enabled?.ToString() ?? "未知"}",
             $"锁定状态: {(user.IsAccountLockedOut() ? "已锁定" : "正常")}",
-            $"密码上次设置: {user.LastPasswordSet?.ToString() ?? "未知"}",
-            $"上次登录时间: {user.LastLogon?.ToString() ?? "未知"}",
+            $"密码上次设置: {TimeHelper.ToBeijingTimeString(user.LastPasswordSet)}",
+            $"上次登录时间: {TimeHelper.ToBeijingTimeString(user.LastLogon)}",
             $"密码永不过期: {user.PasswordNeverExpires}"
         };
 
@@ -251,7 +251,7 @@ public class IndexModel : PageModel
         {
             var dir = Path.Combine(AppContext.BaseDirectory, "App_Data");
             Directory.CreateDirectory(dir);
-            var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | {entry}{Environment.NewLine}";
+            var line = $"{TimeHelper.BeijingNow:yyyy-MM-dd HH:mm:ss} | {entry}{Environment.NewLine}";
             FileProtection.AppendAllText(Path.Combine(dir, "audit.dat"), line);
         }
         catch { }

@@ -91,7 +91,7 @@ public class BatchUserModel : PageModel
 
     private void BatchSearch(List<string> ids)
     {
-        Results.Add($"查询结果 ({DateTime.Now:HH:mm:ss})");
+        Results.Add($"查询结果 ({TimeHelper.BeijingNow:HH:mm:ss})");
         Results.Add(new string('-', 60));
         foreach (var id in ids)
         {
@@ -109,7 +109,7 @@ public class BatchUserModel : PageModel
 
     private void BatchEnable(List<string> ids)
     {
-        Results.Add($"启用结果 ({DateTime.Now:HH:mm:ss})");
+        Results.Add($"启用结果 ({TimeHelper.BeijingNow:HH:mm:ss})");
         Results.Add(new string('-', 60));
         foreach (var id in ids)
         {
@@ -127,7 +127,7 @@ public class BatchUserModel : PageModel
 
     private void BatchDisable(List<string> ids)
     {
-        Results.Add($"禁用结果 ({DateTime.Now:HH:mm:ss})");
+        Results.Add($"禁用结果 ({TimeHelper.BeijingNow:HH:mm:ss})");
         Results.Add(new string('-', 60));
         foreach (var id in ids)
         {
@@ -145,7 +145,7 @@ public class BatchUserModel : PageModel
 
     private void BatchReset(List<string> ids)
     {
-        Results.Add($"密码重置结果 ({DateTime.Now:HH:mm:ss})");
+        Results.Add($"密码重置结果 ({TimeHelper.BeijingNow:HH:mm:ss})");
         Results.Add(new string('-', 60));
         var resetList = new List<(string Id, string Name, string Pwd)>();
 

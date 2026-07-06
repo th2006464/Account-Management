@@ -120,7 +120,7 @@ public class LoginModel : PageModel
         {
             var dir = Path.Combine(AppContext.BaseDirectory, "App_Data");
             Directory.CreateDirectory(dir);
-            var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | 管理员登录 | 账号: {employeeId}{Environment.NewLine}";
+            var line = $"{TimeHelper.BeijingNow:yyyy-MM-dd HH:mm:ss} | 管理员登录 | 账号: {employeeId}{Environment.NewLine}";
             lock (s_lock)
             {
                 FileProtection.AppendAllText(Path.Combine(dir, "audit.dat"), line);

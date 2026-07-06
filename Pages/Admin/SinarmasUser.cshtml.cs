@@ -1,5 +1,6 @@
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
+using AccountManagement.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -103,8 +104,8 @@ public class SinarmasUserModel : PageModel
             $"显示名称: {user.DisplayName}",
             $"员工号: {user.EmployeeId}",
             $"启用状态: {(user.Enabled == true ? "是" : "否")}",
-            $"密码上次设置: {(user.LastPasswordSet?.ToString("yyyy-MM-dd HH:mm:ss") ?? "未知")}",
-            $"上次登录时间: {(user.LastLogon?.ToString("yyyy-MM-dd HH:mm:ss") ?? "未知")}",
+            $"密码上次设置: {TimeHelper.ToBeijingTimeString(user.LastPasswordSet)}",
+            $"上次登录时间: {TimeHelper.ToBeijingTimeString(user.LastLogon)}",
             $"是否锁定: {(user.IsAccountLockedOut() ? "是 (已锁定)" : "否 (正常)")}",
             $"密码永不过期: {(user.PasswordNeverExpires ? "是" : "否")}",
             $"邮箱: {user.EmailAddress}"

@@ -252,9 +252,9 @@ public class UserAdminModel : PageModel
                     $"手机: {GetProp(entry, "mobile")}",
                     $"账号启用: {(user.Enabled == true ? "是" : "否")}",
                     $"账号锁定: {(user.IsAccountLockedOut() ? "是 (已锁定)" : "否 (正常)")}",
-                    $"账号过期时间: {(user.AccountExpirationDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "永不过期")}",
-                    $"密码上次设置: {(user.LastPasswordSet?.ToString("yyyy-MM-dd HH:mm:ss") ?? "未知")}",
-                    $"上次登录时间: {(user.LastLogon?.ToString("yyyy-MM-dd HH:mm:ss") ?? "未知")}",
+                    $"账号过期时间: {(user.AccountExpirationDate.HasValue ? TimeHelper.ToBeijingTime(user.AccountExpirationDate.Value).ToString("yyyy-MM-dd HH:mm:ss") : "永不过期")}",
+                    $"密码上次设置: {TimeHelper.ToBeijingTimeString(user.LastPasswordSet)}",
+                    $"上次登录时间: {TimeHelper.ToBeijingTimeString(user.LastLogon)}",
                     $"密码永不过期: {(user.PasswordNeverExpires ? "是" : "否")}"
                 };
 
@@ -263,12 +263,13 @@ public class UserAdminModel : PageModel
                     var maxPwdAge = GetDomainMaxPasswordAge(context);
                     if (maxPwdAge.HasValue && maxPwdAge.Value > 0)
                     {
-                        var expireDate = user.LastPasswordSet.Value.AddTicks(-maxPwdAge.Value);
-                        var remaining = expireDate - DateTime.Now;
+                        var expireDateUtc = user.LastPasswordSet.Value.AddTicks(-maxPwdAge.Value);
+                        var expireDateBj = TimeHelper.ToBeijingTime(expireDateUtc);
+                        var remaining = expireDateUtc - TimeHelper.BeijingNow;
                         if (remaining.TotalDays < 0)
-                            lines.Add($"密码已过期: {Math.Abs((int)remaining.TotalDays)} 天前已过期 ({expireDate:yyyy-MM-dd HH:mm:ss})");
+                            lines.Add($"密码已过期: {Math.Abs((int)remaining.TotalDays)} 天前已过期 ({expireDateBj:yyyy-MM-dd HH:mm:ss})");
                         else
-                            lines.Add($"密码过期时间: {expireDate:yyyy-MM-dd HH:mm:ss} (剩余 {(int)remaining.TotalDays} 天)");
+                            lines.Add($"密码过期时间: {expireDateBj:yyyy-MM-dd HH:mm:ss} (剩余 {(int)remaining.TotalDays} 天)");
                     }
                 }
 
@@ -410,7 +411,7 @@ public class UserAdminModel : PageModel
             var newPassword = GenerateRandomPassword();
             PasswordHelper.SetPasswordWithNotification(SearchEmployeeId, newPassword);
 
-            var now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            var now = TimeHelper.BeijingNow.ToString("yyyy-MM-dd HH:mm:ss");
             ResetResults.Add($"员工号: {SearchEmployeeId}");
             ResetResults.Add($"显示名: {user.DisplayName}");
             ResetResults.Add($"新密码: {newPassword}");
@@ -427,12 +428,12 @@ public class UserAdminModel : PageModel
                 try
                 {
                     EmailSender.SendAdminPasswordReset(empId, pwd, empName);
-                    AddEmailStatus($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | 邮件发送成功 | 账号: {empId}");
+                    AddEmailStatus($"{TimeHelper.BeijingNow:yyyy-MM-dd HH:mm:ss} | 邮件发送成功 | 账号: {empId}");
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "邮件发送失败");
-                    AddEmailStatus($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | 邮件发送失败: {ex.Message} | 账号: {empId}");
+                    AddEmailStatus($"{TimeHelper.BeijingNow:yyyy-MM-dd HH:mm:ss} | 邮件发送失败: {ex.Message} | 账号: {empId}");
                 }
             });
 
@@ -528,7 +529,7 @@ public class UserAdminModel : PageModel
 
             // 执行离职操作
             using var userEntry = result.GetDirectoryEntry();
-            var now = DateTime.Now.ToString("yyyy-MM-dd");
+            var now = TimeHelper.BeijingNow.ToString("yyyy-MM-dd");
 
             // 更新描述
             var oldDesc = result.Properties.Contains("description") && result.Properties["description"].Count > 0
@@ -562,7 +563,7 @@ public class UserAdminModel : PageModel
 
             OffboardResults.Add($"【成功关闭】{displayName} ({sam})  离职 {now}");
 
-            var history = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | 离职: {sam} | {displayName} | {now}";
+            var history = $"{TimeHelper.BeijingNow:yyyy-MM-dd HH:mm:ss} | 离职: {sam} | {displayName} | {now}";
             AddOffboardHistory(history);
             WriteAuditLog($"离职处理 | 操作人: {CurrentEmployeeId} | 账号: {sam} ({displayName})");
 
@@ -605,7 +606,7 @@ public class UserAdminModel : PageModel
         try
         {
             Directory.CreateDirectory(StoragePath);
-            var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | {entry}{Environment.NewLine}";
+            var line = $"{TimeHelper.BeijingNow:yyyy-MM-dd HH:mm:ss} | {entry}{Environment.NewLine}";
             lock (s_lock)
             {
                 FileProtection.AppendAllText(AuditLogFile, line);
@@ -832,7 +833,7 @@ public class UserAdminModel : PageModel
             group.Save();
 
             ResultMessage = $"已将用户 '{SearchEmployeeId}' 添加到用户组 '{GroupName}'。";
-            var now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            var now = TimeHelper.BeijingNow.ToString("yyyy-MM-dd HH:mm:ss");
             AddGroupHistory($"{now} | 账号: {SearchEmployeeId} ({user.DisplayName}) | 加入组: {GroupName}");
             WriteAuditLog($"加用户组 | 操作人: {CurrentEmployeeId} | 账号: {SearchEmployeeId} | 组: {GroupName}");
         }

@@ -53,7 +53,7 @@ public class OnboardModel : PageModel
 
     private static string GenerateRequestId()
     {
-        var today = DateTime.Now.ToString("yyyyMMdd");
+        var today = TimeHelper.BeijingNow.ToString("yyyyMMdd");
         lock (s_lock)
         {
             var all = LoadAllRequestsUnlocked();
@@ -103,7 +103,7 @@ public class OnboardModel : PageModel
             return Page();
         }
 
-        var today = DateTime.Now.ToString("yyyyMMdd");
+        var today = TimeHelper.BeijingNow.ToString("yyyyMMdd");
         var empId = EmployeeId!.Trim();
         var request = new OnboardRequest
         {
@@ -171,7 +171,7 @@ public class OnboardModel : PageModel
         {
             var dir = Path.Combine(AppContext.BaseDirectory, "App_Data");
             Directory.CreateDirectory(dir);
-            var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | {entry}{Environment.NewLine}";
+            var line = $"{TimeHelper.BeijingNow:yyyy-MM-dd HH:mm:ss} | {entry}{Environment.NewLine}";
             FileProtection.AppendAllText(Path.Combine(dir, "audit.dat"), line);
         }
         catch { }
@@ -214,7 +214,7 @@ public class OnboardModel : PageModel
             {
                 req.Status = status;
                 req.ReviewedBy = reviewer;
-                req.ReviewTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                req.ReviewTime = TimeHelper.BeijingNow.ToString("yyyy-MM-dd HH:mm:ss");
                 if (password != null) req.NewPassword = password;
                 FileProtection.WriteAllText(RequestFile, JsonSerializer.Serialize(list));
             }

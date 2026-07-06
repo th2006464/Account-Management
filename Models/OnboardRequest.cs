@@ -14,7 +14,7 @@ public class OnboardRequest
     public string NeedVpn { get; set; } = "否";
     public bool VpnSap { get; set; }
     public bool VpnTpm { get; set; }
-    public string SubmitTime { get; set; } = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+    public string SubmitTime { get; set; } = Helpers.TimeHelper.BeijingNow.ToString("yyyy-MM-dd HH:mm:ss");
     public string? Status { get; set; } // null=pending, "approved", "rejected"
     public string? ReviewedBy { get; set; }
     public string? ReviewTime { get; set; }

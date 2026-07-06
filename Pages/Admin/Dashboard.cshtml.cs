@@ -1,5 +1,6 @@
 using System.DirectoryServices;
 using System.Text.Json;
+using AccountManagement.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -84,7 +85,7 @@ public class DashboardModel : PageModel
             ("OU=gar,OU=garchina,DC=garchina,DC=com", "粮油"),
         };
 
-        var now = DateTime.Now;
+        var now = TimeHelper.BeijingNow;
         foreach (var (ouPath, ouLabel) in ous)
         {
             try
@@ -215,7 +216,7 @@ public class DashboardModel : PageModel
         catch { }
 
         // 最近30日入职统计（食品+粮油）
-        var cutoffDate = now.AddDays(-30).ToString("yyyyMMddHHmmss.0Z");
+        var cutoffDate = DateTime.UtcNow.AddDays(-30).ToString("yyyyMMddHHmmss.0Z");
         var onboardOus = new List<(string Path, string Label)>
         {
             ("OU=food,OU=garchina,DC=garchina,DC=com", "食品"),
@@ -256,7 +257,7 @@ public class DashboardModel : PageModel
             }
         }
 
-        LastRestart = DateTime.Now.AddHours(-Environment.TickCount64 / 3600000.0);
+        LastRestart = TimeHelper.BeijingNow.AddHours(-Environment.TickCount64 / 3600000.0);
     }
 
     public class OuStat

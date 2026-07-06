@@ -1,5 +1,6 @@
 using System.DirectoryServices;
 using System.Linq;
+using AccountManagement.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -149,7 +150,7 @@ public class ReportModel : PageModel
         var header = "状态".PadRight(wStatus + gap) + "账号".PadRight(wSam + gap) + "显示名".PadRight(wName + gap) + "员工号".PadRight(wEmpId + gap) + "密码设置时间".PadRight(wPwdSet + gap) + "邮箱";
         var sep = new string('-', sepLen);
 
-        ReportResults.Add($"查询时间: {DateTime.Now:yyyy-MM-dd HH:mm:ss}    用户总数: {grandTotal}");
+        ReportResults.Add($"查询时间: {TimeHelper.BeijingNow:yyyy-MM-dd HH:mm:ss}    用户总数: {grandTotal}");
         ReportResults.Add(sep);
         ReportResults.Add(header);
         ReportResults.Add(sep);
@@ -195,7 +196,7 @@ public class ReportModel : PageModel
     private void QueryPasswordExpiry(List<(string Path, string Label)> ous, int withinDays)
     {
         const int maxPwdAge = 90;
-        var now = DateTime.Now;
+        var now = TimeHelper.BeijingNow;
         var ouLabels = new HashSet<string>(ous.Select(o => o.Label));
         var allCached = GetCachedUsers().Where(u => ouLabels.Contains(u.OuLabel) && u.Enabled == "启用").ToList();
         var allUsers = new List<UserRecord>();
@@ -205,14 +206,15 @@ public class ReportModel : PageModel
             if (string.IsNullOrEmpty(u.PwdLastSetRaw) || u.PwdLastSetRaw == "0") continue;
             if (!long.TryParse(u.PwdLastSetRaw, out var ticks) || ticks <= 0) continue;
 
-            var pwdSetDate = DateTime.FromFileTimeUtc(ticks);
-            var daysSinceSet = (now - pwdSetDate).TotalDays;
+            var pwdSetDateUtc = DateTime.FromFileTimeUtc(ticks);
+            var pwdSetDateBj = TimeHelper.ToBeijingTime(pwdSetDateUtc);
+            var daysSinceSet = (now - pwdSetDateBj).TotalDays;
             var daysRemaining = maxPwdAge - daysSinceSet;
 
             if (daysRemaining > 0 && daysRemaining <= withinDays)
             {
                 u.PwdDaysRemaining = (int)daysRemaining;
-                u.PwdLastSet = pwdSetDate.ToString("yyyy-MM-dd");
+                u.PwdLastSet = pwdSetDateBj.ToString("yyyy-MM-dd");
                 allUsers.Add(u);
             }
         }
@@ -240,7 +242,7 @@ public class ReportModel : PageModel
         var header = "状态".PadRight(wStatus + gap) + "账号".PadRight(wSam + gap) + "显示名".PadRight(wName + gap) + "员工号".PadRight(wEmpId + gap) + "密码设置时间".PadRight(wPwdSet + gap) + "剩余天数".PadRight(wDays + gap) + "邮箱";
         var sep = new string('-', sepLen);
 
-        ReportResults.Add($"查询时间: {DateTime.Now:yyyy-MM-dd HH:mm:ss}    密码 {withinDays} 天内到期用户数: {allUsers.Count}");
+        ReportResults.Add($"查询时间: {TimeHelper.BeijingNow:yyyy-MM-dd HH:mm:ss}    密码 {withinDays} 天内到期用户数: {allUsers.Count}");
         ReportResults.Add(sep);
         ReportResults.Add(header);
         ReportResults.Add(sep);
@@ -289,12 +291,12 @@ public class ReportModel : PageModel
             sb.AppendLine($"\"{u.Enabled}\",\"{u.SamAccountName}\",\"{u.DisplayName}\",\"{u.EmployeeId}\",\"{u.PwdLastSet}\",\"{u.Mail}\",\"{u.OuLabel}\"");
         }
         s_csvData = sb.ToString();
-        s_csvFileName = $"用户报表_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+        s_csvFileName = $"用户报表_{TimeHelper.BeijingNow:yyyyMMdd_HHmmss}.csv";
     }
 
     private void QueryPasswordChanged(List<(string Path, string Label)> ous, int withinDays)
     {
-        var now = DateTime.Now;
+        var now = TimeHelper.BeijingNow;
         var cutoff = now.AddDays(-withinDays);
         var ouLabels = new HashSet<string>(ous.Select(o => o.Label));
         var allCached = GetCachedUsers().Where(u => ouLabels.Contains(u.OuLabel)).ToList();
@@ -305,10 +307,11 @@ public class ReportModel : PageModel
             if (string.IsNullOrEmpty(u.PwdLastSetRaw) || u.PwdLastSetRaw == "0") continue;
             if (!long.TryParse(u.PwdLastSetRaw, out var ticks) || ticks <= 0) continue;
 
-            var pwdDate = DateTime.FromFileTimeUtc(ticks);
-            if (pwdDate < cutoff) continue;
+            var pwdDateUtc = DateTime.FromFileTimeUtc(ticks);
+            var pwdDateBj = TimeHelper.ToBeijingTime(pwdDateUtc);
+            if (pwdDateBj < cutoff) continue;
 
-            u.PwdLastSet = pwdDate.ToString("yyyy-MM-dd");
+            u.PwdLastSet = pwdDateBj.ToString("yyyy-MM-dd");
             allUsers.Add(u);
         }
 
@@ -423,9 +426,9 @@ public class ReportModel : PageModel
         {
             var val = result.Properties[name][0];
             if (val is long ticks && name == "pwdLastSet")
-                return DateTime.FromFileTimeUtc(ticks).ToString("yyyy-MM-dd");
+                return TimeHelper.ToBeijingTime(DateTime.FromFileTimeUtc(ticks)).ToString("yyyy-MM-dd");
             if (val is long lastLogon && name == "lastLogonTimestamp")
-                return DateTime.FromFileTimeUtc(lastLogon).ToString("yyyy-MM-dd");
+                return TimeHelper.ToBeijingTime(DateTime.FromFileTimeUtc(lastLogon)).ToString("yyyy-MM-dd");
             return val.ToString() ?? "-";
         }
         return "-";
