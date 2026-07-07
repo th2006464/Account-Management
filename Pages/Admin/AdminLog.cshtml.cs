@@ -22,12 +22,12 @@ public class AdminLogModel : PageModel
 
     private static string AuditLogFile => Path.Combine(AppContext.BaseDirectory, "App_Data", "audit.dat");
 
-    public void OnGet(int page = 1)
+    public void OnGet(int p = 1)
     {
         CheckAuth();
         if (!IsAuthenticated) return;
 
-        CurrentPage = page < 1 ? 1 : page;
+        CurrentPage = p < 1 ? 1 : p;
         LoadLogs();
     }
 
