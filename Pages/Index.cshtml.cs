@@ -266,8 +266,8 @@ public class IndexModel : PageModel
                 return true;
         }
 
-        // 检测3位及以上整词重复（如 abcabc、123123、qweqwe）
-        for (int len = 3; len <= 4; len++)
+        // 检测2位及以上整词重复（如 abab、1818、abcabc、123123）
+        for (int len = 2; len <= 4; len++)
         {
             for (int i = 0; i <= lower.Length - len * 2; i++)
             {

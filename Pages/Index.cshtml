@@ -263,8 +263,8 @@
             if (s.indexOf(kbV[k]) !== -1) return true;
             if (s.indexOf(kbV[k].split('').reverse().join('')) !== -1) return true;
         }
-        // 3-4位整词重复
-        for (var len = 3; len <= 4; len++) {
+        // 2-4位整词重复
+        for (var len = 2; len <= 4; len++) {
             for (var i = 0; i <= s.length - len * 2; i++) {
                 var ok = true;
                 for (var j = 0; j < len; j++) {
