@@ -4,115 +4,89 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GARCHINA 日志查看器</title>
+<link rel="stylesheet" href="https://apps.bdimg.com/libs/bootstrap/3.3.4/css/bootstrap.min.css" />
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: #1a1a2e; color: #e0e0e0; min-height: 100vh; }
-.header { background: #16213e; padding: 16px 24px; border-bottom: 2px solid #0f3460; display: flex; align-items: center; gap: 12px; }
-.header h1 { font-size: 18px; color: #e94560; }
-.header span { font-size: 12px; color: #666; }
-
-.container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+body { padding: 20px 0; }
+.header { border-bottom: 2px solid #e94560; padding-bottom: 12px; margin-bottom: 20px; }
+.header h2 { margin: 0; color: #e94560; }
+.header small { color: #999; }
 
 /* 上传区 */
-.drop-zone { border: 2px dashed #0f3460; border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all .3s; background: #16213e; margin-bottom: 20px; }
-.drop-zone:hover, .drop-zone.drag-over { border-color: #e94560; background: #1a1a40; }
-.drop-zone svg { width: 48px; height: 48px; margin-bottom: 12px; fill: #0f3460; }
-.drop-zone p { color: #888; font-size: 14px; }
+.drop-zone { border: 2px dashed #ddd; border-radius: 8px; padding: 30px; text-align: center; cursor: pointer; transition: all .3s; background: #fafafa; margin-bottom: 16px; }
+.drop-zone:hover, .drop-zone.drag-over { border-color: #e94560; background: #fff0f0; }
+.drop-zone p { color: #999; margin: 8px 0 0; font-size: 14px; }
 .drop-zone .highlight { color: #e94560; }
 
-/* 文件信息条 */
-.file-info { display: none; align-items: center; gap: 12px; padding: 12px 16px; background: #16213e; border-radius: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-.file-info.show { display: flex; }
-.file-info .name { font-weight: bold; color: #e94560; font-size: 14px; }
-.file-info .meta { color: #888; font-size: 12px; }
-.file-info .badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; }
-.badge-json { background: #e94560; color: #fff; }
-.badge-text { background: #0f3460; color: #fff; }
-.file-info .btn { margin-left: auto; }
-
-/* 按钮 */
-.btn { padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all .2s; }
-.btn-primary { background: #e94560; color: #fff; }
-.btn-primary:hover { background: #ff6b81; }
-.btn-outline { background: transparent; border: 1px solid #0f3460; color: #ccc; }
-.btn-outline:hover { border-color: #e94560; color: #e94560; }
-.btn-sm { padding: 4px 12px; font-size: 11px; }
-
-/* 工具栏 */
-.toolbar { display: none; align-items: center; gap: 8px; padding: 8px 0; margin-bottom: 8px; flex-wrap: wrap; }
-.toolbar.show { display: flex; }
-.toolbar .search { flex: 1; min-width: 200px; padding: 8px 12px; border-radius: 6px; border: 1px solid #0f3460; background: #16213e; color: #e0e0e0; font-size: 13px; outline: none; }
-.toolbar .search:focus { border-color: #e94560; }
-.toolbar .stats { font-size: 12px; color: #888; white-space: nowrap; }
-
 /* 内容区 */
-.content-area { display: none; background: #0d1117; border: 1px solid #0f3460; border-radius: 8px; overflow: hidden; }
-.content-area.show { display: block; }
-.content-area pre { padding: 16px; margin: 0; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; max-height: 70vh; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
-.content-area .line { display: flex; }
-.content-area .line:hover { background: rgba(233,69,96,.08); }
-.content-area .line-num { color: #444; min-width: 48px; text-align: right; padding-right: 16px; user-select: none; flex-shrink: 0; }
+.content-panel { display: none; }
+.content-panel.show { display: block; }
+.content-panel pre { padding: 12px 16px; margin: 0; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; line-height: 1.5; max-height: 65vh; overflow: auto; white-space: pre-wrap; word-break: break-all; background: #f8f8f8; border: 1px solid #e8e8e8; border-top: none; }
+.content-panel .line { display: flex; }
+.content-panel .line:hover { background: #fff0f0; }
+.content-panel .line-num { color: #ccc; min-width: 42px; text-align: right; padding-right: 14px; user-select: none; flex-shrink: 0; }
 
 /* JSON 高亮 */
-.json-key   { color: #79c0ff; }
-.json-str   { color: #a5d6ff; }
-.json-num   { color: #ffab70; }
-.json-bool  { color: #ff7b72; }
-.json-null  { color: #8b949e; }
+.json-key   { color: #881391; }
+.json-str   { color: #1a6b1a; }
+.json-num   { color: #b85c00; }
+.json-bool  { color: #c41a16; }
+.json-null  { color: #999; }
 
-/* 错误提示 */
-.error-box { display: none; padding: 12px 16px; background: #3d1a1a; border: 1px solid #e94560; border-radius: 8px; color: #ff6b81; font-size: 13px; margin-bottom: 16px; }
-.error-box.show { display: block; }
-
-.empty-state { text-align: center; padding: 60px 20px; color: #444; }
-.empty-state svg { width: 60px; height: 60px; margin-bottom: 16px; fill: #222; }
+/* 元信息 */
+.meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.meta-row .label { font-size: 12px; }
 </style>
 </head>
 <body>
 
-<div class="header">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="#e94560"><path d="M20 6h-8l-3-3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg>
-    <h1>GARCHINA 日志查看器</h1>
-    <span>— 离线解密 .dat 文件</span>
-</div>
-
 <div class="container">
 
+    <div class="header">
+        <h2>📁 GARCHINA 日志查看器 <small>— 本地解密 .dat 文件</small></h2>
+    </div>
+
+    <div class="alert alert-info" style="font-size:13px;margin-bottom:12px;">
+        💡 所有解密操作均在本地浏览器完成，文件不会上传到任何服务器。拖拽或点击下方区域选择文件。
+    </div>
+
+    <div class="alert alert-danger" id="errorBox" style="display:none;margin-bottom:12px;"></div>
+
     <div class="drop-zone" id="dropZone">
-        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        <p style="font-size:20px;">📂</p>
         <p>拖拽 <span class="highlight">.dat</span> 文件到此处，或 <span class="highlight">点击选择</span></p>
         <input type="file" id="fileInput" accept=".dat" style="display:none">
     </div>
 
-    <div class="error-box" id="errorBox"></div>
-
-    <div class="file-info" id="fileInfo">
-        <span class="name" id="fileName">—</span>
-        <span class="meta" id="fileSize">—</span>
-        <span class="badge badge-text" id="fileType">文本</span>
-        <button class="btn btn-sm btn-outline" id="copyBtn">&#128203; 复制全文</button>
-        <button class="btn btn-sm btn-outline" id="clearBtn">&#10005; 关闭</button>
+    <!-- 文件信息 -->
+    <div class="panel panel-default" id="fileInfo" style="display:none;">
+        <div class="panel-body" style="padding:8px 12px;">
+            <div class="meta-row">
+                <strong id="fileName" style="color:#e94560;">—</strong>
+                <span class="label label-default" id="fileType">文本</span>
+                <small class="text-muted" id="fileSize">—</small>
+                <div style="margin-left:auto">
+                    <button class="btn btn-default btn-sm" id="copyBtn">📋 复制全文</button>
+                    <button class="btn btn-default btn-sm" id="clearBtn">✕ 关闭</button>
+                </div>
+            </div>
+            <div class="input-group input-group-sm">
+                <span class="input-group-addon">🔍</span>
+                <input type="text" class="form-control" id="searchInput" placeholder="搜索过滤...">
+            </div>
+            <small class="text-muted" id="stats" style="display:block;margin-top:4px;">—</small>
+        </div>
     </div>
 
-    <div class="toolbar" id="toolbar">
-        <input type="text" class="search" id="searchInput" placeholder="搜索过滤...">
-        <span class="stats" id="stats">—</span>
-    </div>
-
-    <div class="content-area" id="contentArea">
+    <!-- 内容 -->
+    <div class="content-panel" id="contentPanel">
         <pre id="contentPre"></pre>
-    </div>
-
-    <div class="empty-state" id="emptyState">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-        <p>所有解密操作均在本地浏览器中完成，文件不会上传到任何服务器</p>
     </div>
 
 </div>
 
 <script>
 // ═══════════════════════════════════════════
-// MD5 实现（Web Crypto API 不支持 MD5）
+// MD5（Web Crypto API 不支持 MD5）
 // ═══════════════════════════════════════════
 function md5(string) {
     function r(n,c){return(n<<c)|(n>>>(32-c));}
@@ -152,7 +126,7 @@ function md5(string) {
 }
 
 // ═══════════════════════════════════════════
-// 密钥和 IV 派生（与 FileProtection.cs 一致）
+// 密钥派生
 // ═══════════════════════════════════════════
 const KEY_PASSPHRASE = 'GARCHINA@2026#AccountMgmt_SecureKey!';
 const IV_PASSPHRASE = 'CN_IT_Support@sinarmas-agri.com';
@@ -165,9 +139,7 @@ async function deriveKey() {
 function deriveIv() {
     const hash = md5(IV_PASSPHRASE);
     const bytes = new Uint8Array(16);
-    for (let i = 0; i < 16; i++) {
-        bytes[i] = parseInt(hash.substr(i * 2, 2), 16);
-    }
+    for (let i = 0; i < 16; i++) bytes[i] = parseInt(hash.substr(i * 2, 2), 16);
     return bytes;
 }
 
@@ -186,8 +158,8 @@ async function decryptFile(fileBuffer) {
 // 格式化
 // ═══════════════════════════════════════════
 function isJson(str) {
-    const trimmed = str.trim();
-    return (trimmed.startsWith('[') || trimmed.startsWith('{'));
+    const t = str.trim();
+    return t.startsWith('[') || t.startsWith('{');
 }
 
 function formatContent(text) {
@@ -200,9 +172,10 @@ function formatContent(text) {
     return { type: 'text', html: textToHtml(text), raw: text };
 }
 
-function jsonToHtml(obj, indent = 0) {
-    const pad = '  '.repeat(indent);
-    const next = '  '.repeat(indent + 1);
+function jsonToHtml(obj, indent) {
+    indent = indent || 0;
+    var pad = '  '.repeat(indent);
+    var next = '  '.repeat(indent + 1);
 
     if (obj === null) return '<span class="json-null">null</span>';
     if (typeof obj === 'boolean') return '<span class="json-bool">' + obj + '</span>';
@@ -211,33 +184,31 @@ function jsonToHtml(obj, indent = 0) {
 
     if (Array.isArray(obj)) {
         if (obj.length === 0) return '[]';
-        let html = '[\n';
-        obj.forEach((item, i) => {
+        var html = '[\n';
+        obj.forEach(function(item, i) {
             html += next + jsonToHtml(item, indent + 1);
             if (i < obj.length - 1) html += ',';
             html += '\n';
         });
-        html += pad + ']';
-        return html;
+        return html + pad + ']';
     }
 
-    const keys = Object.keys(obj);
+    var keys = Object.keys(obj);
     if (keys.length === 0) return '{}';
-    let html = '{\n';
-    keys.forEach((key, i) => {
+    var html = '{\n';
+    keys.forEach(function(key, i) {
         html += next + '<span class="json-key">"' + esc(key) + '"</span>: ' + jsonToHtml(obj[key], indent + 1);
         if (i < keys.length - 1) html += ',';
         html += '\n';
     });
-    html += pad + '}';
-    return html;
+    return html + pad + '}';
 }
 
 function textToHtml(text) {
-    const lines = text.split('\n');
-    return lines.map((line, i) =>
-        '<div class="line"><span class="line-num">' + (i + 1) + '</span>' + esc(line) + '</div>'
-    ).join('');
+    var lines = text.split('\n');
+    return lines.map(function(line, i) {
+        return '<div class="line"><span class="line-num">' + (i + 1) + '</span>' + esc(line) + '</div>';
+    }).join('');
 }
 
 function esc(s) {
@@ -245,31 +216,28 @@ function esc(s) {
 }
 
 // ═══════════════════════════════════════════
-// UI 逻辑
+// UI
 // ═══════════════════════════════════════════
-let currentRaw = '';
-let currentFiltered = '';
+var currentRaw = '';
+var currentFiltered = '';
 
-const dropZone = document.getElementById('dropZone');
-const fileInput = document.getElementById('fileInput');
-const errorBox = document.getElementById('errorBox');
-const fileInfo = document.getElementById('fileInfo');
-const contentArea = document.getElementById('contentArea');
-const contentPre = document.getElementById('contentPre');
-const toolbar = document.getElementById('toolbar');
-const searchInput = document.getElementById('searchInput');
-const stats = document.getElementById('stats');
-const emptyState = document.getElementById('emptyState');
+var dropZone = document.getElementById('dropZone');
+var fileInput = document.getElementById('fileInput');
+var errorBox = document.getElementById('errorBox');
+var fileInfo = document.getElementById('fileInfo');
+var contentPanel = document.getElementById('contentPanel');
+var contentPre = document.getElementById('contentPre');
+var searchInput = document.getElementById('searchInput');
+var stats = document.getElementById('stats');
 
-dropZone.addEventListener('click', () => fileInput.click());
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); });
-fileInput.addEventListener('change', () => { if (fileInput.files[0]) processFile(fileInput.files[0]); });
+dropZone.addEventListener('click', function() { fileInput.click(); });
+dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('drag-over'); });
+dropZone.addEventListener('drop', function(e) { e.preventDefault(); dropZone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', function() { if (fileInput.files[0]) processFile(fileInput.files[0]); });
 
 async function processFile(file) {
-    errorBox.classList.remove('show');
-    errorBox.textContent = '';
+    errorBox.style.display = 'none';
 
     if (!file.name.endsWith('.dat')) {
         showError('请选择 .dat 文件');
@@ -277,28 +245,23 @@ async function processFile(file) {
     }
 
     try {
-        const buffer = await file.arrayBuffer();
-        const text = await decryptFile(new Uint8Array(buffer));
+        var buffer = await file.arrayBuffer();
+        var text = await decryptFile(new Uint8Array(buffer));
         currentRaw = text;
 
-        const formatted = formatContent(text);
+        var formatted = formatContent(text);
 
-        // 文件信息
         document.getElementById('fileName').textContent = file.name;
         document.getElementById('fileSize').textContent = formatSize(file.size) + ' · ' + text.split('\n').length + ' 行';
-        const typeBadge = document.getElementById('fileType');
+        var typeBadge = document.getElementById('fileType');
         typeBadge.textContent = formatted.type === 'json' ? 'JSON' : '文本';
-        typeBadge.className = 'badge ' + (formatted.type === 'json' ? 'badge-json' : 'badge-text');
+        typeBadge.className = 'label ' + (formatted.type === 'json' ? 'label-danger' : 'label-primary');
 
-        // 内容
         contentPre.innerHTML = formatted.html;
         currentFiltered = text;
 
-        // 显示
-        fileInfo.classList.add('show');
-        toolbar.classList.add('show');
-        contentArea.classList.add('show');
-        emptyState.style.display = 'none';
+        fileInfo.style.display = 'block';
+        contentPanel.style.display = 'block';
         searchInput.value = '';
 
         updateStats(text);
@@ -308,20 +271,17 @@ async function processFile(file) {
 }
 
 function showError(msg) {
-    errorBox.textContent = msg;
-    errorBox.classList.add('show');
-    fileInfo.classList.remove('show');
-    toolbar.classList.remove('show');
-    contentArea.classList.remove('show');
-    emptyState.style.display = 'block';
+    errorBox.textContent = '⚠ ' + msg;
+    errorBox.style.display = 'block';
+    fileInfo.style.display = 'none';
+    contentPanel.style.display = 'none';
 }
 
 function updateStats(text) {
-    const lines = text.split('\n');
+    var lines = text.split('\n');
     stats.textContent = '共 ' + lines.length + ' 行';
     if (currentFiltered !== text) {
-        const filtered = currentFiltered.split('\n');
-        stats.textContent += ' · 过滤后 ' + filtered.length + ' 行';
+        stats.textContent += ' · 过滤后 ' + currentFiltered.split('\n').length + ' 行';
     }
 }
 
@@ -331,40 +291,35 @@ function formatSize(bytes) {
     return (bytes / 1048576).toFixed(1) + ' MB';
 }
 
-// 搜索过滤
-searchInput.addEventListener('input', () => {
-    const q = searchInput.value.toLowerCase();
+searchInput.addEventListener('input', function() {
+    var q = searchInput.value.toLowerCase();
     if (!q) {
         currentFiltered = currentRaw;
         contentPre.innerHTML = formatContent(currentRaw).html;
         updateStats(currentRaw);
         return;
     }
-    const lines = currentRaw.split('\n');
-    const filtered = lines.filter(l => l.toLowerCase().includes(q));
+    var lines = currentRaw.split('\n');
+    var filtered = lines.filter(function(l) { return l.toLowerCase().indexOf(q) !== -1; });
     currentFiltered = filtered.join('\n');
     contentPre.innerHTML = textToHtml(currentFiltered);
     updateStats(currentRaw);
 });
 
-// 复制全文
-document.getElementById('copyBtn').addEventListener('click', async () => {
-    await navigator.clipboard.writeText(currentFiltered);
-    const btn = document.getElementById('copyBtn');
-    const orig = btn.textContent;
+document.getElementById('copyBtn').addEventListener('click', function() {
+    navigator.clipboard.writeText(currentFiltered);
+    var btn = document.getElementById('copyBtn');
+    var orig = btn.textContent;
     btn.textContent = '✅ 已复制';
-    setTimeout(() => btn.textContent = orig, 1500);
+    setTimeout(function() { btn.textContent = orig; }, 1500);
 });
 
-// 关闭
-document.getElementById('clearBtn').addEventListener('click', () => {
+document.getElementById('clearBtn').addEventListener('click', function() {
     currentRaw = '';
     currentFiltered = '';
-    fileInfo.classList.remove('show');
-    toolbar.classList.remove('show');
-    contentArea.classList.remove('show');
-    emptyState.style.display = 'block';
-    errorBox.classList.remove('show');
+    fileInfo.style.display = 'none';
+    contentPanel.style.display = 'none';
+    errorBox.style.display = 'none';
     fileInput.value = '';
 });
 </script>
