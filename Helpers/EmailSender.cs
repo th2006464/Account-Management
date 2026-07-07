@@ -195,7 +195,6 @@ public static class EmailSender
         var body = $@"尊敬的用户，
 
 您的 GARCHINA 账号 {employeeId} 密码已更新。
-新密码为：{newPassword}
 
 此密码适用于：
 - GARCHINA 系统认证
@@ -206,8 +205,8 @@ public static class EmailSender
 特别注意：
 1. 复制粘贴密码时，请先粘贴到记事本，检查是否有空格。
 2. 输入密码后，点击密码框旁的小眼睛图标确认输入正确。
-3. 请尽快更新默认密码，密码更新后会自动同步至邮箱系统。
-4. ChinaOA、Workday系统登录时请注意用户名格式。
+3. 密码更新后会自动同步至邮箱系统。
+4. ChinaOA、Workday系统登录时请注意用户名格式: GARCHINA\{employeeId}
 
 如有问题，请联系中国区 IT 部门：
 邮箱：CN_IT_Support@sinarmas-agri.com
