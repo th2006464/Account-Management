@@ -201,7 +201,7 @@ public class IndexModel : PageModel
             return "密码必须包含符号（如 !@#$% 等）。";
 
         if (HasSequentialPattern(password))
-            return "密码包含连续字符（如 abcd、1234、qwer），请更换。";
+            return "密码包含连续或重复字符（如 abcd、1234、1111），请更换。";
 
         return null;
     }
@@ -209,6 +209,15 @@ public class IndexModel : PageModel
     private static bool HasSequentialPattern(string s)
     {
         var lower = s.ToLowerInvariant();
+
+        // 检测4个连续相同字符（如 1111、aaaa、@@@@）
+        for (int i = 0; i < lower.Length - 3; i++)
+        {
+            if (lower[i] == lower[i + 1] &&
+                lower[i] == lower[i + 2] &&
+                lower[i] == lower[i + 3])
+                return true;
+        }
 
         // 检测4个字符的连续递增/递减
         for (int i = 0; i < lower.Length - 3; i++)
@@ -225,14 +234,14 @@ public class IndexModel : PageModel
         }
 
         // 检测常见键盘横向连续
-        string[] kbPatterns =
+        string[] kbHorizPatterns =
         {
             "qwer", "wert", "erty", "rtyu", "tyui", "yuio", "uiop",
             "asdf", "sdfg", "dfgh", "fghj", "ghjk", "hjkl",
             "zxcv", "xcvb", "cvbn", "vbnm"
         };
 
-        foreach (var pattern in kbPatterns)
+        foreach (var pattern in kbHorizPatterns)
         {
             if (lower.Contains(pattern))
                 return true;
@@ -240,6 +249,37 @@ public class IndexModel : PageModel
             var reversed = new string(pattern.Reverse().ToArray());
             if (lower.Contains(reversed))
                 return true;
+        }
+
+        // 检测常见键盘纵向连续（如 1qaz、2wsx 等）
+        string[] kbVertPatterns =
+        {
+            "1qaz", "2wsx", "3edc", "4rfv", "5tgb", "6yhn", "7ujm"
+        };
+
+        foreach (var pattern in kbVertPatterns)
+        {
+            if (lower.Contains(pattern))
+                return true;
+
+            var reversed = new string(pattern.Reverse().ToArray());
+            if (lower.Contains(reversed))
+                return true;
+        }
+
+        // 检测3位及以上整词重复（如 abcabc、123123、qweqwe）
+        for (int len = 3; len <= 4; len++)
+        {
+            for (int i = 0; i <= lower.Length - len * 2; i++)
+            {
+                bool match = true;
+                for (int j = 0; j < len; j++)
+                {
+                    if (lower[i + j] != lower[i + len + j])
+                    { match = false; break; }
+                }
+                if (match) return true;
+            }
         }
 
         return false;
