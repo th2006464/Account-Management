@@ -201,7 +201,7 @@ public class IndexModel : PageModel
             return "密码必须包含符号（如 !@#$% 等）。";
 
         if (HasSequentialPattern(password))
-            return "密码包含连续或重复字符（如 abcd、1234、1111），请更换。";
+            return "密码包含连续或重复字符（如 abcd、1234、111），请更换。";
 
         return null;
     }
@@ -210,12 +210,11 @@ public class IndexModel : PageModel
     {
         var lower = s.ToLowerInvariant();
 
-        // 检测4个连续相同字符（如 1111、aaaa、@@@@）
-        for (int i = 0; i < lower.Length - 3; i++)
+        // 检测3个连续相同字符（如 111、aaa、@@@）
+        for (int i = 0; i < lower.Length - 2; i++)
         {
             if (lower[i] == lower[i + 1] &&
-                lower[i] == lower[i + 2] &&
-                lower[i] == lower[i + 3])
+                lower[i] == lower[i + 2])
                 return true;
         }
 

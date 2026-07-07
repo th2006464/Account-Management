@@ -48,7 +48,7 @@
                     <span id="checkLower">&#9679; 包含小写字母</span><br />
                     <span id="checkDigit">&#9679; 包含数字</span><br />
                     <span id="checkSymbol">&#9679; 包含符号</span><br />
-                    <span id="checkSeq">&#9679; 无连续/重复字符(如abcd、1234、1111)</span>
+                    <span id="checkSeq">&#9679; 无连续/重复字符(如abcd、1234、111)</span>
                 </div>
             </div>
             <div class="form-group">
@@ -236,10 +236,12 @@
 
     function hasSequential(s) {
         s = s.toLowerCase();
+        // 3个连续相同字符
+        for (var i = 0; i < s.length - 2; i++) {
+            if (s[i] === s[i+1] && s[i] === s[i+2]) return true;
+        }
+        // 4个连续递增/递减
         for (var i = 0; i < s.length - 3; i++) {
-            // 4个连续相同字符
-            if (s[i] === s[i+1] && s[i] === s[i+2] && s[i] === s[i+3]) return true;
-            // 4个连续递增/递减
             var c1 = s.charCodeAt(i);
             var c2 = s.charCodeAt(i + 1);
             var c3 = s.charCodeAt(i + 2);
@@ -289,7 +291,7 @@
         checkLower.innerHTML = /[a-z]/.test(v) ? pass('包含小写字母') : fail('包含小写字母');
         checkDigit.innerHTML = /[0-9]/.test(v) ? pass('包含数字') : fail('包含数字');
         checkSymbol.innerHTML = /[^a-zA-Z0-9]/.test(v) ? pass('包含符号') : fail('包含符号');
-        checkSeq.innerHTML = !hasSequential(v) ? pass('无连续/重复字符(如abcd、1234、1111)') : fail('无连续/重复字符(如abcd、1234、1111)');
+        checkSeq.innerHTML = !hasSequential(v) ? pass('无连续/重复字符(如abcd、1234、111)') : fail('无连续/重复字符(如abcd、1234、111)');
         checkConfirmMatch();
     });
 
