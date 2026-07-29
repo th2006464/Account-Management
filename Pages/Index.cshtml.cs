@@ -200,6 +200,9 @@ public class IndexModel : PageModel
         if (!password.Any(c => !char.IsLetterOrDigit(c)))
             return "密码必须包含符号（如 !@#$% 等）。";
 
+        if (password.Count(char.IsDigit) > 4)
+            return "密码中数字不能超过4位。";
+
         if (HasSequentialPattern(password))
             return "密码包含连续或重复字符（如 abcd、1234、111），请更换。";
 

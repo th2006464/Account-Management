@@ -48,6 +48,7 @@
                     <span id="checkLower">&#9679; 包含小写字母</span><br />
                     <span id="checkDigit">&#9679; 包含数字</span><br />
                     <span id="checkSymbol">&#9679; 包含符号</span><br />
+                    <span id="checkDigitLimit">&#9679; 数字不超过4位</span><br />
                     <span id="checkSeq">&#9679; 无连续/重复字符(如abcd、1234、111)</span>
                 </div>
             </div>
@@ -231,6 +232,7 @@
     var checkLower = document.getElementById('checkLower');
     var checkDigit = document.getElementById('checkDigit');
     var checkSymbol = document.getElementById('checkSymbol');
+    var checkDigitLimit = document.getElementById('checkDigitLimit');
     var checkSeq = document.getElementById('checkSeq');
     var confirmMatch = document.getElementById('confirmMatch');
 
@@ -291,6 +293,8 @@
         checkLower.innerHTML = /[a-z]/.test(v) ? pass('包含小写字母') : fail('包含小写字母');
         checkDigit.innerHTML = /[0-9]/.test(v) ? pass('包含数字') : fail('包含数字');
         checkSymbol.innerHTML = /[^a-zA-Z0-9]/.test(v) ? pass('包含符号') : fail('包含符号');
+        var digitCount = (v.match(/[0-9]/g) || []).length;
+        checkDigitLimit.innerHTML = digitCount <= 4 ? pass('数字不超过4位') : fail('数字不超过4位');
         checkSeq.innerHTML = !hasSequential(v) ? pass('无连续/重复字符(如abcd、1234、111)') : fail('无连续/重复字符(如abcd、1234、111)');
         checkConfirmMatch();
     });
