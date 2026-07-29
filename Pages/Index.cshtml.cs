@@ -201,7 +201,7 @@ public class IndexModel : PageModel
             return "密码必须包含符号（如 !@#$% 等）。";
 
         if (password.Count(char.IsDigit) > 4)
-            return "密码中数字不能超过4位。";
+            return "密码中数字累计不能超过4个。";
 
         if (HasSequentialPattern(password))
             return "密码包含连续或重复字符（如 abcd、1234、111），请更换。";
