@@ -180,9 +180,10 @@ public class RequestModel : PageModel
             var mobile = req.Mobile;
             var region = req.Region;
             var contactEmail = req.ContactEmail;
+            var needEmail = req.NeedEmail ?? "否";
             _ = Task.Run(() =>
             {
-                try { EmailSender.SendOnboardApproval(cn, en, emp, pwd, emailAddr, mobile, region, contactEmail); }
+                try { EmailSender.SendOnboardApproval(cn, en, emp, pwd, emailAddr, mobile, region, contactEmail, needEmail); }
                 catch (Exception ex) { _logger.LogError(ex, "入职邮件发送失败"); }
             });
 
