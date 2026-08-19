@@ -145,7 +145,7 @@ public class BatchUserModel : PageModel
 
     private void BatchReset(List<string> ids)
     {
-        Results.Add($"密码重置结果 ({TimeHelper.BeijingNow:HH:mm:ss})");
+        Results.Add($"密码重置结果 ({TimeHelper.BeijingNow:yyyy-MM-dd HH:mm:ss})");
         Results.Add(new string('-', 60));
         var resetList = new List<(string Id, string Name, string Pwd)>();
 

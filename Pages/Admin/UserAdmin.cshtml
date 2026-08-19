@@ -81,8 +81,11 @@
 @if (Model.ResetResults != null && Model.ResetResults.Count > 0)
 {
     <div class="panel panel-success" style="margin-top:8px;">
-        <div class="panel-heading" style="padding:6px 12px;">密码重置结果</div>
-        <div class="panel-body" style="padding:6px 12px;"><pre style="margin:0;font-size:12px;">@string.Join(Environment.NewLine, Model.ResetResults)</pre></div>
+        <div class="panel-heading" style="padding:6px 12px;">
+            <strong>密码重置结果</strong>
+            <button type="button" class="btn btn-default btn-xs" style="float:right;" onclick="copyResult('resetResultText',this)">复制</button>
+        </div>
+        <div class="panel-body" style="padding:6px 12px;"><pre id="resetResultText" style="margin:0;font-size:12px;">@string.Join(Environment.NewLine, Model.ResetResults)</pre></div>
     </div>
 }
 
@@ -149,6 +152,22 @@
 </div>
 
 <script>
+// 复制结果文本到剪贴板
+function copyResult(id, btn) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    sel.removeAllRanges();
+    var old = btn.textContent;
+    btn.textContent = ok ? '已复制' : '复制失败';
+    setTimeout(function() { btn.textContent = old; }, 1500);
+}
 var pendingAction = '';
 function confirmAction(action, name) {
     pendingAction = action;

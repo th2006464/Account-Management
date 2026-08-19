@@ -40,9 +40,12 @@
 @if (Model.Results.Count > 0)
 {
     <div class="panel panel-default" style="margin-top:8px;">
-        <div class="panel-heading" style="padding:6px 12px;"><strong>执行结果</strong> <span class="badge">成功 @Model.SuccessCount</span> <span class="badge">失败 @Model.FailCount</span></div>
+        <div class="panel-heading" style="padding:6px 12px;">
+            <strong>执行结果</strong> <span class="badge">成功 @Model.SuccessCount</span> <span class="badge">失败 @Model.FailCount</span>
+            <button type="button" class="btn btn-default btn-xs" style="float:right;" onclick="copyResult('batchResultText',this)">复制</button>
+        </div>
         <div class="panel-body" style="padding:6px 12px;">
-            <pre style="max-height:400px;overflow-y:auto;font-size:12px;margin:0;">@string.Join(Environment.NewLine, Model.Results)</pre>
+            <pre id="batchResultText" style="max-height:400px;overflow-y:auto;font-size:12px;margin:0;">@string.Join(Environment.NewLine, Model.Results)</pre>
         </div>
     </div>
 }
@@ -62,6 +65,22 @@
 </div>
 
 <script>
+// 复制结果文本到剪贴板
+function copyResult(id, btn) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    sel.removeAllRanges();
+    var old = btn.textContent;
+    btn.textContent = ok ? '已复制' : '复制失败';
+    setTimeout(function() { btn.textContent = old; }, 1500);
+}
 function confirmReset(){ $('#confirmModal').modal('show'); }
 document.getElementById('btnConfirmReset').addEventListener('click',function(){
     $('#confirmModal').modal('hide');

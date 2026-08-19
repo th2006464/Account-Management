@@ -412,6 +412,7 @@ public class UserAdminModel : PageModel
             PasswordHelper.SetPasswordWithNotification(SearchEmployeeId, newPassword);
 
             var now = TimeHelper.BeijingNow.ToString("yyyy-MM-dd HH:mm:ss");
+            ResetResults.Add($"密码重置结果 ({now})");
             ResetResults.Add($"员工号: {SearchEmployeeId}");
             ResetResults.Add($"显示名: {user.DisplayName}");
             ResetResults.Add($"新密码: {newPassword}");
