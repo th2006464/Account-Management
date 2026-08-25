@@ -26,10 +26,22 @@
             <div class="form-group" style="margin-bottom:8px;">
                 <label style="font-size:12px;">输入员工号（每行一个，或用逗号/空格分隔）</label>
                 <textarea class="form-control" name="InputIds" rows="6" style="font-size:13px;resize:vertical;" placeholder="15005035&#10;14205424&#10;98970505">@Model.InputIds</textarea>
-                <p style="font-size:12px;color:#999;margin:4px 0 0;">支持多行批量操作；邮箱为空或已是 &#64;golden-agri.com 的用户将自动跳过。</p>
+                <p style="font-size:12px;color:#999;margin:4px 0 0;">支持多行批量操作；邮箱为空或已是 &#64;golden-agri.com 的用户将自动跳过；已在目标用户组中的用户自动跳过。</p>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <button type="submit" name="action" value="updateemail" class="btn btn-success btn-sm">更新邮箱地址</button>
+            </div>
+        </div>
+    </div>
+    <div class="panel panel-warning" style="margin-top:8px;">
+        <div class="panel-heading" style="padding:6px 12px;"><strong>维护用户组</strong></div>
+        <div class="panel-body" style="padding:8px 12px;">
+            <label style="font-size:12px;">点击按钮，将上方输入的用户批量加入对应的用户组：</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+                <button type="submit" name="action" value="addgroup_FOOD" class="btn btn-default btn-sm">FOOD</button>
+                <button type="submit" name="action" value="addgroup_GAR" class="btn btn-default btn-sm">GAR</button>
+                <button type="submit" name="action" value="addgroup_TPM" class="btn btn-default btn-sm">TPM</button>
+                <button type="submit" name="action" value="addgroup_SAP" class="btn btn-default btn-sm">SAP</button>
             </div>
         </div>
     </div>

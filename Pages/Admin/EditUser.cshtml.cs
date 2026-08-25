@@ -62,6 +62,7 @@ public class EditUserModel : PageModel
         SkipCount = 0;
 
         if (action == "updateemail") BatchUpdateEmail(ids);
+        else if (action.StartsWith("addgroup_")) BatchAddGroup(ids, action.Substring("addgroup_".Length));
 
         if (ResultMessage != null) TempData["ResultMessage"] = ResultMessage;
         if (ErrorMessage != null) TempData["ErrorMessage"] = ErrorMessage;
@@ -141,5 +142,56 @@ public class EditUserModel : PageModel
             catch (Exception ex) { Results.Add($"{id} — 错误: {ex.Message}"); FailCount++; }
         }
         ResultMessage = $"邮箱更新完成: 成功 {SuccessCount}, 失败 {FailCount}, 跳过 {SkipCount}";
+    }
+
+    /// <summary>
+    /// 批量维护用户组：将用户批量加入指定用户组；
+    /// 已在组中的用户跳过，组名不存在则全部失败。
+    /// </summary>
+    private void BatchAddGroup(List<string> ids, string groupName)
+    {
+        Results.Add($"用户组维护结果 — {groupName} ({TimeHelper.BeijingNow:yyyy-MM-dd HH:mm:ss})");
+        Results.Add(new string('-', 60));
+        try
+        {
+            using var ctx = new PrincipalContext(ContextType.Domain);
+            using var group = GroupPrincipal.FindByIdentity(ctx, groupName);
+            if (group == null)
+            {
+                Results.Add($"用户组 '{groupName}' 不存在，请确认组名称。");
+                FailCount = ids.Count;
+                ResultMessage = $"加入用户组失败: 组 '{groupName}' 不存在";
+                return;
+            }
+
+            foreach (var id in ids)
+            {
+                try
+                {
+                    using var user = UserPrincipal.FindByIdentity(ctx, IdentityType.SamAccountName, id);
+                    if (user == null) { Results.Add($"{id} — 未找到"); FailCount++; continue; }
+
+                    if (user.IsMemberOf(group))
+                    {
+                        Results.Add($"{id} | {user.DisplayName} | 已在用户组 {groupName} 中");
+                        SkipCount++;
+                        continue;
+                    }
+
+                    group.Members.Add(user);
+                    group.Save();
+                    Results.Add($"{id} | {user.DisplayName} | 已加入用户组 {groupName}");
+                    SuccessCount++;
+                }
+                catch (Exception ex) { Results.Add($"{id} — 错误: {ex.Message}"); FailCount++; }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "批量加入用户组失败: {GroupName}", groupName);
+            Results.Add($"操作失败: {ex.Message}");
+            FailCount = ids.Count;
+        }
+        ResultMessage = $"用户组维护完成 ({groupName}): 成功 {SuccessCount}, 失败 {FailCount}, 跳过 {SkipCount}";
     }
 }
