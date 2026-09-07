@@ -111,7 +111,7 @@ public class NewUserModel : PageModel
         var cnName = CnName!.Trim();
         var employeeId = EmployeeId!.Trim();
         var mobile = Mobile?.Trim() ?? "";
-        var emailAddr = $"{enName}@sinarmas-agri.com";
+        var emailAddr = $"{enName}@golden-agri.com";
         var ouPath = _configuration["AdSettings:NewUserOU"] ?? "OU=TESTOU,DC=garchina,DC=com";
         var domain = _configuration["AdSettings:Domain"] ?? "garchina.com";
 

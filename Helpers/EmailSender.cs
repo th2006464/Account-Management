@@ -294,7 +294,7 @@ public static class EmailSender
 2. 密码有效期 90 天。
 
 如有问题，请联系中国区 IT 部门：
-邮箱：CN_IT_Support@sinarmas-agri.com
+邮箱：CN_IT_Support@golden-agri.com
 
 此邮件由系统自动发送，请勿回复。";
 
@@ -360,9 +360,9 @@ public static class EmailSender
 此账号适用于 GARCHINA 系统认证、China OA 系统、GARCHINA VPN、Workday 请休假系统。
 请尽快登录并修改密码。密码有效期 90 天。
 
-如存在申请邮箱账号需求, 还请等待雅加达邮箱管理团队创建完成，请留意后续邮件。
+如存在申请邮箱账号需求, 系统已自动创建企业邮箱，请留意后续邮件。
 
-如有问题，请联系中国区 IT 部门：CN_IT_Support@sinarmas-agri.com
+如有问题，请联系中国区 IT 部门：CN_IT_Support@golden-agri.com
 此邮件由系统自动发送，请勿回复。";
 
         // 发给管理员

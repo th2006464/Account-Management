@@ -143,7 +143,7 @@ public class RequestModel : PageModel
             var ouPath = _configuration["AdSettings:NewUserOU"] ?? "OU=TESTOU,DC=garchina,DC=com";
             var domain = _configuration["AdSettings:Domain"] ?? "garchina.com";
             var enName = req.EnName.ToLower();
-            var emailAddr = $"{enName}@sinarmas-agri.com";
+            var emailAddr = $"{enName}@golden-agri.com";
             var nameParts = enName.Split('.');
             var givenName = nameParts[0];
             var surname = nameParts.Length > 1 ? nameParts[1] : "";

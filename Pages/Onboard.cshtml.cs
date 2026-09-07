@@ -134,7 +134,7 @@ public class OnboardModel : PageModel
 
         ResultMessage = $"提交成功！申请编号: {request.Id}，请等待管理员审批。\n"
             + "如有更多需求，请联系中国区IT团队：\n"
-            + "CN IT Support <CN_IT_Support@sinarmas-agri.com>";
+            + "CN IT Support <CN_IT_Support@golden-agri.com>";
 
         TempData["ResultMessage"] = ResultMessage;
         return RedirectToPage("/onboard");
