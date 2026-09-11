@@ -41,7 +41,13 @@
 - 多行输入（支持换行/逗号/空格分隔）
 - 四个操作按钮：查询 / 启用 / 禁用 / 批量重置密码
 - 批量重置密码：生成随机密码 + PCNS 同步 + 整合为一封邮件通知
+- 结果面板复制按钮，方便记录归档
 - 二次确认弹窗防误操作
+
+### 编辑用户信息
+- 多行输入批量操作
+- 更新邮箱地址：将 mail 属性后缀统一替换为 `@golden-agri.com`（空的跳过、已是目标后缀的跳过）
+- 维护用户组：一键批量加入 FOOD / GAR / TPM / SAP 用户组（已在组中的自动跳过）
 
 ### 手动创建用户
 - 填写表单 → 写入 AD → 异步发送邮件
@@ -91,6 +97,29 @@ dotnet run
 ```
 双击 `AccountManagement.exe` 自动打开浏览器访问 `http://localhost:5000`。
 
+### AccountManagement.exe 的原理
+
+`AccountManagement.exe` 是 `dotnet publish` 命令编译生成的**框架依赖型可执行文件**，它本身不包含 .NET 运行时和业务代码，而是作为一个原生启动器（AppHost），作用如下：
+
+1. **定位运行时**：exe 内嵌了目标框架标识（`net8.0`），启动时在系统中查找已安装的 .NET 8 运行时。如果未安装会报错提示安装 Hosting Bundle
+2. **加载 DLL**：找到运行时后，加载同目录下的 `AccountManagement.dll`——这才是真正包含所有编译后业务逻辑的程序集（Razor 页面、后端代码、Helper 等全部编译在里面）
+3. **读取运行配置**：根据同目录的 `AccountManagement.runtimeconfig.json` 确定框架版本、GC 模式等参数，然后启动 ASP.NET Core 的 Kestrel HTTP 服务器
+4. **IIS 集成**：当通过 IIS 托管时，`web.config` 中的 `AspNetCoreModuleV2` 负责启动该 exe 并将 HTTP 请求转发给它（in-process 模式下直接在 IIS 工作进程内加载 DLL，不走 exe）
+
+**为什么 exe 只有 150KB 而 DLL 有 400KB**：exe 只是一个薄壳启动器，所有 Razor 页面、C# 业务逻辑、第三方依赖都编译进了 DLL。部署时 exe + DLL 必须一起存在，缺一不可。
+
+**如何重新生成**：
+
+```powershell
+# 框架依赖型（默认，需要服务器预装 .NET 8，体积小 ~3MB）
+dotnet publish -c Release -o ./publish
+
+# 独立部署型（内置运行时，无需预装 .NET，体积大 ~80MB）
+dotnet publish -c Release --self-contained -r win-x64 -o ./publish-standalone
+```
+
+当前项目使用框架依赖型，部署前确认服务器已安装 .NET 8 Hosting Bundle。
+
 ## 部署到 Windows Server + IIS
 
 1. 服务器安装 .NET 8 Hosting Bundle 和 IIS
@@ -122,6 +151,7 @@ dotnet run
 │       ├── Request.cshtml     # 待创建用户（入职流程）
 │       ├── NewUser.cshtml     # 手动创建用户
 │       ├── BatchUser.cshtml   # 批量用户管理
+│       ├── EditUser.cshtml   # 编辑用户信息（邮箱更新+用户组维护）
 │       ├── AdminLog.cshtml    # 高级日志查询（加密存储 + 分页）
 │       └── SinarmasUser.cshtml # 跨域用户查询
 ├── Pages/Shared/
